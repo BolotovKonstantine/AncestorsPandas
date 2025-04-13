@@ -1,44 +1,46 @@
+# python
+
 import pandas as pd
-import matplotlib.pyplot as plt
+
+from normalizations import (
+    strip_column_names,
+    strip_string_values,
+    parse_dates,
+    apply_surname_normalization
+)
+from visualizations import plot_yearly_counts, plot_surname_counts
 
 
+# Read data from a CSV file
 df = pd.read_csv('data/birth.csv', sep=';', encoding='utf-8')
-df.columns = df.columns.str.strip()
-df = df.apply(
-    lambda col: col.map(lambda val: val.strip() if isinstance(val, str) else val)
-)
 
-df['Дата рождения'] = pd.to_datetime(df['Дата рождения'], dayfirst=True, errors='coerce')
-df["normalized_surname"] = df["Фамилия"].apply(
-    lambda s: s[:-1] if isinstance(s, str) and s.endswith("а") else s
-)
+# Apply normalization and cleaning functions
+df = strip_column_names(df)
+df = strip_string_values(df)
+df = parse_dates(df, date_column='Дата рождения')
+df = apply_surname_normalization(df, source_col='Фамилия',
+                                 target_col='normalized_surname')
 
+# Additional data processing steps
 df['year'] = df['Дата рождения'].dt.year
 df['in_fs'] = df['FS'].notna()
+
+# Summaries
 records_by_year = df.groupby('year').size()
 records_by_year_in_fs = df[df['in_fs']].groupby('year').size()
+
 yearly_counts = pd.DataFrame({
     'Total Records': records_by_year,
     'Records in FS': records_by_year_in_fs
 }).fillna(0)
+
 surname_counts = df["normalized_surname"].value_counts()
 
 # Quick inspection
-print(f'Total records in file {len(df)}')
-print(f'Total records in FS {len(df[df["in_fs"]])}')
+print(f'Total records in file: {len(df)}')
+print(f'Total records in FS: {df["in_fs"].sum()}')
 
-yearly_counts.plot(kind='bar', figsize=(10, 6))
-plt.xlabel('Year')
-plt.ylabel('Number of Records')
-plt.title('Total Records vs. Records in FS')
-plt.show()
-plt.figure(figsize=(10, 6))
-surname_counts.plot(kind="bar")
-plt.title("Instances of Each Normalized Surname")
-plt.xlabel("Normalized Surname")
-plt.ylabel("Count")
-plt.tight_layout()
-plt.show()
-
-
+# Call the separate visualization functions
+plot_yearly_counts(yearly_counts)
+plot_surname_counts(surname_counts)
 
