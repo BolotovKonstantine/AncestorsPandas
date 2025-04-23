@@ -6,6 +6,21 @@ DataFrames (except for purely string-level transformations).
 
 import pandas as pd
 
+def load_and_normalize(filepath, date_col=None, surname_col=None, fs_col=None):
+    df = pd.read_csv(filepath, sep=';', encoding='utf-8')
+    df = strip_column_names(df)
+    df = strip_string_values(df)
+    if date_col:
+        df = parse_dates(df, date_column=date_col)
+        # Example: add a year column
+        df['year'] = df[date_col].dt.year
+    if surname_col:
+        df = apply_surname_normalization(df, source_col=surname_col,
+                                         target_col='normalized_surname')
+    if fs_col:
+        df['in_fs'] = df[fs_col].notna()
+    return df
+
 
 def strip_column_names(df: pd.DataFrame) -> pd.DataFrame:
     """
