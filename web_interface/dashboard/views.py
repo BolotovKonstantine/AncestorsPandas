@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 import pandas as pd
 from ancestors_pandas.database import stats_retriever, db
-from config import DB_FILE
+from django.conf import settings
 
 
 @login_required
@@ -12,7 +12,7 @@ def dashboard(request):
     """
     # Initialize the database if it doesn't exist
     try:
-        db.init_database(DB_FILE)
+        db.init_database(settings.DATABASES['default']['NAME'])
     except Exception as e:
         # Log the error but continue
         print(f"Error initializing database: {str(e)}")
@@ -20,7 +20,7 @@ def dashboard(request):
     # Get summary statistics from the database
     try:
         summary_stats = stats_retriever.export_summary_statistics_to_dataframe(
-            db_path=DB_FILE
+            db_path=settings.DATABASES['default']['NAME']
         )
     except Exception as e:
         # Handle the error gracefully
@@ -57,7 +57,7 @@ def data_view(request):
 
     # Initialize the database if it doesn't exist
     try:
-        db.init_database(DB_FILE)
+        db.init_database(settings.DATABASES['default']['NAME'])
     except Exception as e:
         # Log the error but continue
         print(f"Error initializing database: {str(e)}")
@@ -66,7 +66,7 @@ def data_view(request):
     try:
         yearly_data = stats_retriever.export_yearly_comparison_to_dataframe(
             data_source=data_source,
-            db_path=DB_FILE
+            db_path=settings.DATABASES['default']['NAME']
         )
     except Exception as e:
         # Handle the error gracefully
@@ -78,7 +78,7 @@ def data_view(request):
         value_counts = stats_retriever.export_value_counts_to_dataframe(
             column_name='normalized_surname',
             data_source=data_source,
-            db_path=DB_FILE
+            db_path=settings.DATABASES['default']['NAME']
         )
     except Exception as e:
         # Handle the error gracefully
