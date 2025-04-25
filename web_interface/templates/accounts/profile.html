@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}Profile - AncestorsPandas{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">User Profile</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Account Information</h5>
+                        <p><strong>Username:</strong> {{ user.username }}</p>
+                        <p><strong>Email:</strong> {{ user.email|default:"Not provided" }}</p>
+                        <p><strong>Date Joined:</strong> {{ user.date_joined|date:"F d, Y" }}</p>
+                        <p><strong>Last Login:</strong> {{ user.last_login|date:"F d, Y H:i"|default:"Never" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Recent Activity</h5>
+                        <p>No recent activity to display.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

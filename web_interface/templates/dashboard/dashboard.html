@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - AncestorsPandas{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2>AncestorsPandas Dashboard</h2>
+        <p class="lead">Welcome to the AncestorsPandas web interface. This dashboard provides an overview of your genealogical data analysis.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Summary Statistics</h4>
+            </div>
+            <div class="card-body">
+                {% if summary_stats %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Data Source</th>
+                                <th>Total Records</th>
+                                <th>Records in FS</th>
+                                <th>Percentage in FS</th>
+                                <th>Date Calculated</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stat in summary_stats %}
+                            <tr>
+                                <td>{{ stat.data_source }}</td>
+                                <td>{{ stat.total_records }}</td>
+                                <td>{{ stat.records_in_fs }}</td>
+                                <td>{{ stat.percentage_in_fs|floatformat:2 }}%</td>
+                                <td>{{ stat.timestamp }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    No summary statistics available. Run the CLI tool to generate statistics.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">Quick Actions</h4>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <a href="{% url 'visualizations' %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">View Visualizations</h5>
+                            <small>→</small>
+                        </div>
+                        <p class="mb-1">Explore visual representations of your genealogical data.</p>
+                    </a>
+                    <a href="{% url 'data_view' %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">Browse Data</h5>
+                            <small>→</small>
+                        </div>
+                        <p class="mb-1">View and filter your genealogical data records.</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h4 class="mb-0">CLI Commands</h4>
+            </div>
+            <div class="card-body">
+                <p>Use these commands in your terminal to work with AncestorsPandas:</p>
+                <div class="bg-light p-3 rounded">
+                    <code>python -m ancestors_pandas.cli load --births data/births.csv</code>
+                    <br>
+                    <code>python -m ancestors_pandas.cli analyze --by-year --by-surname</code>
+                    <br>
+                    <code>python -m ancestors_pandas.cli visualize --yearly-counts</code>
+                </div>
+                <p class="mt-2">See the <a href="https://github.com/yourusername/AncestorsPandas" target="_blank">documentation</a> for more commands.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

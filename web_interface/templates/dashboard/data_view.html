@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+
+{% block title %}Data View - AncestorsPandas{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2>Data View</h2>
+        <p class="lead">Browse and filter your genealogical data.</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Data Source Selection</h4>
+            </div>
+            <div class="card-body">
+                <form method="get" class="mb-3">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="source" class="form-label">Data Source</label>
+                                <select name="source" id="source" class="form-select">
+                                    <option value="births">Births</option>
+                                    <option value="marriages">Marriages</option>
+                                    <option value="deaths">Deaths</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary">Load Data</button>
+                        </div>
+                    </div>
+                </form>
+                
+                <div class="alert alert-info">
+                    <p><strong>Current Data Source:</strong> {{ data_source|title }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">Yearly Data</h4>
+            </div>
+            <div class="card-body">
+                {% if yearly_data %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-sm">
+                        <thead>
+                            <tr>
+                                <th>Year</th>
+                                <th>Total Records</th>
+                                <th>Records in FS</th>
+                                <th>Percentage in FS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in yearly_data %}
+                            <tr>
+                                <td>{{ record.year }}</td>
+                                <td>{{ record.total }}</td>
+                                <td>{{ record.condition_count }}</td>
+                                <td>{{ record.percentage|floatformat:2 }}%</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-warning">
+                    No yearly data available for this data source.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h4 class="mb-0">Surname Counts</h4>
+            </div>
+            <div class="card-body">
+                {% if value_counts %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-sm">
+                        <thead>
+                            <tr>
+                                <th>Surname</th>
+                                <th>Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in value_counts %}
+                            <tr>
+                                <td>{{ record.value }}</td>
+                                <td>{{ record.count }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-warning">
+                    No surname data available for this data source.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h4 class="mb-0">CLI Commands for Data Analysis</h4>
+            </div>
+            <div class="card-body">
+                <p>Use these commands in your terminal for more detailed data analysis:</p>
+                <div class="bg-light p-3 rounded">
+                    <code>python -m ancestors_pandas.cli analyze --by-year --by-surname --births data/births.csv</code>
+                    <br>
+                    <code>python -m ancestors_pandas.cli view-history --type yearly --data-source {{ data_source }}</code>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

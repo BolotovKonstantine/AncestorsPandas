@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}Visualizations - AncestorsPandas{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2>Visualizations</h2>
+        <p class="lead">Explore visual representations of your genealogical data.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Visualization Options</h4>
+            </div>
+            <div class="card-body">
+                <form id="visualization-form" class="mb-4">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="data-source" class="form-label">Data Source</label>
+                                <select id="data-source" class="form-select">
+                                    <option value="births">Births</option>
+                                    <option value="marriages">Marriages</option>
+                                    <option value="deaths">Deaths</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="visualization-type" class="form-label">Visualization Type</label>
+                                <select id="visualization-type" class="form-select">
+                                    <option value="yearly-counts">Yearly Counts</option>
+                                    <option value="surname-counts">Surname Counts</option>
+                                    <option value="fs-comparison">FS Comparison</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="chart-type" class="form-label">Chart Type</label>
+                                <select id="chart-type" class="form-select">
+                                    <option value="bar">Bar Chart</option>
+                                    <option value="line">Line Chart</option>
+                                    <option value="pie">Pie Chart</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <button type="submit" class="btn btn-primary">Generate Visualization</button>
+                        </div>
+                    </div>
+                </form>
+                
+                <div class="alert alert-info">
+                    <p><strong>Note:</strong> This is a placeholder for interactive visualizations. In a full implementation, this would generate charts based on your selections.</p>
+                    <p>For now, you can use the CLI tool to generate visualizations:</p>
+                    <code>python -m ancestors_pandas.cli visualize --yearly-counts --births data/births.csv</code>
+                </div>
+                
+                <div id="visualization-container" class="mt-4">
+                    <div class="text-center">
+                        <img src="https://via.placeholder.com/800x400?text=Visualization+Placeholder" class="img-fluid" alt="Visualization Placeholder">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">Saved Visualizations</h4>
+            </div>
+            <div class="card-body">
+                <p>No saved visualizations yet. Generate and save visualizations to see them here.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.getElementById('visualization-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        alert('This is a placeholder. In a full implementation, this would generate a visualization based on your selections.');
+    });
+</script>
+{% endblock %}

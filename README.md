@@ -66,6 +66,20 @@ For a more in-depth overview of the project, including a demonstration of the da
    ```
    The examples directory contains ready-to-run scripts demonstrating various features of the application.
 
+5. **Using the Web Interface**
+   ```bash
+   cd web_interface
+   python manage.py runserver
+   ```
+   This will start the Django web server. Open your browser and navigate to http://127.0.0.1:8000/ to access the web interface.
+
+   Note: Before running the web interface for the first time, you need to create a superuser:
+   ```bash
+   cd web_interface
+   python manage.py migrate
+   python manage.py createsuperuser
+   ```
+
 # Data Analysis Results
 - The number of records in the dataset was grouped by year, revealing trends in how many births fall into each year.
 - A subset of the data (specified by a particular field) was isolated and analyzed to determine how many of those records belong to the subset versus the entire dataset.
@@ -82,10 +96,14 @@ Through these analyses, I was able to:
   - [Python 3.x](https://www.python.org/)   
   - [Pandas](https://pandas.pydata.org/): for data manipulation and analysis   
   - [Matplotlib](https://matplotlib.org/): for creating visualizations   
+  - [Django](https://www.djangoproject.com/): for the web interface   
+  - [Bootstrap](https://getbootstrap.com/): for responsive web design   
 
 # Useful Websites
 - [Pandas Documentation](https://pandas.pydata.org/docs/)
 - [Matplotlib Documentation](https://matplotlib.org/stable/index.html)
+- [Django Documentation](https://docs.djangoproject.com/)
+- [Bootstrap Documentation](https://getbootstrap.com/docs/)
 
 # Future Work
 - Expand data cleaning functionality to handle more missing and malformed data.
