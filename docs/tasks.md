@@ -87,11 +87,11 @@ This document contains a detailed list of actionable improvement tasks for the A
     - 50.2. [x] Design database schema for storing calculated statistics
     - 50.3. [x] Implement functions to create necessary tables
     - 50.4. [x] Add error handling for database operations
-51. [ ] Create logging functionality for calculated statistics
-    - 51.1. [ ] Implement functions to log summary statistics (total records, records in FS, etc.)
-    - 51.2. [ ] Add logging for yearly comparisons
-    - 51.3. [ ] Create functions to log surname counts and other value counts
-    - 51.4. [ ] Store timestamps with each log entry to track when calculations were performed
+51. [x] Create logging functionality for calculated statistics
+    - 51.1. [x] Implement functions to log summary statistics (total records, records in FS, etc.)
+    - 51.2. [x] Add logging for yearly comparisons
+    - 51.3. [x] Create functions to log surname counts and other value counts
+    - 51.4. [x] Store timestamps with each log entry to track when calculations were performed
 52. [ ] Implement data retrieval functionality
     - 52.1. [ ] Create functions to query historical calculation data
     - 52.2. [ ] Add filtering options by date, data source, and statistic type

@@ -12,6 +12,7 @@ from ancestors_pandas.data_loading import loader
 from ancestors_pandas.analysis import statistics
 from ancestors_pandas.visualization import plots
 from ancestors_pandas.database import db
+from ancestors_pandas.database import stats_logger
 from ancestors_pandas import cli
 from config import (
     BIRTHS_FILE, MARRIAGES_FILE, DEATHS_FILE,
@@ -65,28 +66,21 @@ def main():
         yearly_comparison = statistics.create_yearly_comparison(births_df, IN_FS_COL)
         surname_counts = statistics.count_values(births_df, NORMALIZED_SURNAME_COL)
 
-        # Store statistics in database
-        log.info("Storing statistics in database...")
+        # Log statistics to database
+        log.info("Logging statistics to database...")
         try:
-            # Get summary statistics for each data source
-            births_stats = statistics.get_summary_statistics(births_df)
-            marriages_stats = statistics.get_summary_statistics(marriages_df)
-            deaths_stats = statistics.get_summary_statistics(deaths_df)
+            # Log all statistics for each data source
+            births_result = stats_logger.log_all_statistics(births_df, "births")
+            marriages_result = stats_logger.log_all_statistics(marriages_df, "marriages")
+            deaths_result = stats_logger.log_all_statistics(deaths_df, "deaths")
 
-            # Store summary statistics
-            db.store_summary_statistics(births_stats, "births")
-            db.store_summary_statistics(marriages_stats, "marriages")
-            db.store_summary_statistics(deaths_stats, "deaths")
+            log.info(f"Births statistics logged with summary ID: {births_result['summary_id']}")
+            log.info(f"Marriages statistics logged with summary ID: {marriages_result['summary_id']}")
+            log.info(f"Deaths statistics logged with summary ID: {deaths_result['summary_id']}")
 
-            # Store yearly comparison
-            db.store_yearly_comparison(yearly_comparison, "births", IN_FS_COL)
-
-            # Store surname counts
-            db.store_value_counts(surname_counts, NORMALIZED_SURNAME_COL, "births")
-
-            log.info("Statistics stored successfully")
+            log.info("Statistics logged successfully")
         except db.QueryError as e:
-            log.error(f"Error storing statistics: {str(e)}")
+            log.error(f"Error logging statistics: {str(e)}")
 
         # Visualize data
         log.info("Visualizing data...")
