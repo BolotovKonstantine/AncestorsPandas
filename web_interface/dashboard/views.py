@@ -5,6 +5,29 @@ from ancestors_pandas.database import stats_retriever, db
 from django.conf import settings
 
 
+def convert_binary_to_int(df, column_name):
+    """
+    Convert binary data in a DataFrame column to integers.
+
+    Parameters:
+    -----------
+    df : pd.DataFrame
+        DataFrame containing the column to convert
+    column_name : str
+        Name of the column to convert
+
+    Returns:
+    --------
+    pd.DataFrame
+        DataFrame with the column converted to integers
+    """
+    if not df.empty and column_name in df.columns and df[column_name].dtype == 'object':
+        df[column_name] = df[column_name].apply(
+            lambda x: int.from_bytes(x, byteorder='little') if isinstance(x, bytes) else x
+        )
+    return df
+
+
 @login_required
 def dashboard(request):
     """
@@ -26,6 +49,14 @@ def dashboard(request):
         # Handle the error gracefully
         print(f"Error retrieving summary statistics: {str(e)}")
         summary_stats = pd.DataFrame()
+
+    # Convert binary data to integers if needed
+    summary_stats = convert_binary_to_int(summary_stats, 'records_in_fs')
+    summary_stats = convert_binary_to_int(summary_stats, 'total_records')
+
+    # Calculate percentage in FS if both fields exist
+    if not summary_stats.empty and 'records_in_fs' in summary_stats.columns and 'total_records' in summary_stats.columns:
+        summary_stats['percentage_in_fs'] = (summary_stats['records_in_fs'] / summary_stats['total_records']) * 100
 
     context = {
         'summary_stats': summary_stats.to_dict('records') if not summary_stats.empty else [],
@@ -84,6 +115,13 @@ def data_view(request):
         # Handle the error gracefully
         print(f"Error retrieving value counts data: {str(e)}")
         value_counts = pd.DataFrame()
+
+    # Convert binary data to integers if needed in yearly_data
+    yearly_data = convert_binary_to_int(yearly_data, 'records_with_condition')
+    yearly_data = convert_binary_to_int(yearly_data, 'total_records')
+
+    # Convert binary data to integers if needed in value_counts
+    value_counts = convert_binary_to_int(value_counts, 'count')
 
     context = {
         'page_title': 'Data View',
