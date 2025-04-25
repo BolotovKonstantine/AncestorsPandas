@@ -17,8 +17,8 @@ This document contains a detailed list of actionable improvement tasks for the A
 
 9. [x] Add docstrings to all modules and functions that are missing them
 10. [x] Implement input validation for all functions
-11. [ ] Add constants for magic strings and numbers
-12. [ ] Implement PEP 8 compliance throughout the codebase
+11. [x] Add constants for magic strings and numbers
+12. [x] Implement PEP 8 compliance throughout the codebase
 13. [ ] Add more comments explaining complex logic
 14. [ ] Remove unused imports and variables
 15. [ ] Implement consistent naming conventions
@@ -56,36 +56,45 @@ This document contains a detailed list of actionable improvement tasks for the A
 38. [ ] Implement caching for expensive operations
 39. [ ] Add support for incremental data processing
 40. [ ] Create more advanced analytics (e.g., family relationships, geographic distribution)
+41. [ ] Implement functionality to find the same person across different tables:
+    - 41.1. [ ] Create a unique person identifier system
+    - 41.2. [ ] Develop matching algorithms based on name, patronymic, and other identifiers
+    - 41.3. [ ] Implement fuzzy matching for names with different spellings
+    - 41.4. [ ] Add support for matching based on FamilySearch IDs when available
+    - 41.5. [ ] Create a confidence scoring system for potential matches
+    - 41.6. [ ] Develop a user interface to review and confirm potential matches
+    - 41.7. [ ] Implement functionality to merge or link records for the same person
+    - 41.8. [ ] Add visualization of a person's records across all tables
 
 ## Visualization and User Experience
 
-41. [ ] Add more visualization types (pie charts, line graphs, heatmaps)
-42. [ ] Implement interactive visualizations
-43. [ ] Add options to save visualizations to files
-44. [ ] Create a simple web interface for viewing results
-45. [ ] Add customization options for visualizations (colors, labels, etc.)
-46. [ ] Implement progress indicators for long-running operations
-47. [ ] Add support for different output formats (CSV, JSON, etc.)
-48. [ ] Create a dashboard with multiple visualizations
+42. [ ] Add more visualization types (pie charts, line graphs, heatmaps)
+43. [ ] Implement interactive visualizations
+44. [ ] Add options to save visualizations to files
+45. [ ] Create a simple web interface for viewing results
+46. [ ] Add customization options for visualizations (colors, labels, etc.)
+47. [ ] Implement progress indicators for long-running operations
+48. [ ] Add support for different output formats (CSV, JSON, etc.)
+49. [ ] Create a dashboard with multiple visualizations
 
 ## Performance Optimization
 
-49. [ ] Profile the code to identify bottlenecks
-50. [ ] Optimize data loading for large files
-51. [ ] Implement parallel processing for data analysis
-52. [ ] Add memory usage optimization for large datasets
-53. [ ] Implement lazy loading for data that isn't immediately needed
-54. [ ] Optimize visualization rendering for large datasets
-55. [ ] Add benchmarking tools to measure performance improvements
-56. [ ] Implement data compression for storage efficiency
+50. [ ] Profile the code to identify bottlenecks
+51. [ ] Optimize data loading for large files
+52. [ ] Implement parallel processing for data analysis
+53. [ ] Add memory usage optimization for large datasets
+54. [ ] Implement lazy loading for data that isn't immediately needed
+55. [ ] Optimize visualization rendering for large datasets
+56. [ ] Add benchmarking tools to measure performance improvements
+57. [ ] Implement data compression for storage efficiency
 
 ## Deployment and Distribution
 
-57. [ ] Package the project for PyPI distribution
-58. [ ] Create a Docker container for easy deployment
-59. [ ] Add environment-specific configuration
-60. [ ] Implement version checking and update notifications
-61. [ ] Create executable binaries for non-technical users
-62. [ ] Add support for cloud storage (S3, Google Cloud, etc.)
-63. [ ] Implement a plugin system for extensibility
-64. [ ] Create deployment documentation
+58. [ ] Package the project for PyPI distribution
+59. [ ] Create a Docker container for easy deployment
+60. [ ] Add environment-specific configuration
+61. [ ] Implement version checking and update notifications
+62. [ ] Create executable binaries for non-technical users
+63. [ ] Add support for cloud storage (S3, Google Cloud, etc.)
+64. [ ] Implement a plugin system for extensibility
+65. [ ] Create deployment documentation

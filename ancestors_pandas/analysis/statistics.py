@@ -6,9 +6,15 @@ This module provides functions for statistical analysis of genealogical data.
 
 import pandas as pd
 from typing import Dict, Tuple, Optional
+from config import (
+    YEAR_COL, IN_FS_COL, NORMALIZED_SURNAME_COL,
+    TOTAL_RECORDS_COL, RECORDS_WITH_CONDITION_FORMAT,
+    STAT_TOTAL_RECORDS, STAT_MISSING_VALUES, STAT_UNIQUE_YEARS,
+    STAT_RECORDS_IN_FS, STAT_UNIQUE_SURNAMES
+)
 
 
-def count_records_by_year(df: pd.DataFrame, year_col: str = 'year') -> pd.Series:
+def count_records_by_year(df: pd.DataFrame, year_col: str = YEAR_COL) -> pd.Series:
     """
     Count the number of records per year.
 
@@ -55,7 +61,7 @@ def count_records_by_year(df: pd.DataFrame, year_col: str = 'year') -> pd.Series
 
 
 def count_records_by_year_with_condition(
-    df: pd.DataFrame, condition_col: str, year_col: str = 'year'
+    df: pd.DataFrame, condition_col: str, year_col: str = YEAR_COL
 ) -> pd.Series:
     """
     Count the number of records per year that meet a specific condition.
@@ -102,20 +108,34 @@ def count_records_by_year_with_condition(
         raise ValueError("year_col cannot be empty")
 
     if condition_col not in df.columns:
-        raise KeyError(f"Column '{condition_col}' not found in DataFrame. Available columns: {', '.join(df.columns)}")
+        available_cols = ', '.join(df.columns)
+        raise KeyError(
+            f"Column '{condition_col}' not found in DataFrame. "
+            f"Available columns: {available_cols}"
+        )
 
     if year_col not in df.columns:
-        raise KeyError(f"Column '{year_col}' not found in DataFrame. Available columns: {', '.join(df.columns)}")
+        available_cols = ', '.join(df.columns)
+        raise KeyError(
+            f"Column '{year_col}' not found in DataFrame. "
+            f"Available columns: {available_cols}"
+        )
 
     try:
         # Check if condition_col contains boolean values
-        if not pd.api.types.is_bool_dtype(df[condition_col]) and not all(isinstance(x, bool) for x in df[condition_col].dropna()):
+        is_bool_dtype = pd.api.types.is_bool_dtype(df[condition_col])
+        all_bool_values = all(isinstance(x, bool) for x in df[condition_col].dropna())
+
+        if not is_bool_dtype and not all_bool_values:
             # Try to convert to boolean if possible
             try:
                 df = df.copy()
                 df[condition_col] = df[condition_col].astype(bool)
             except Exception:
-                raise ValueError(f"Column '{condition_col}' must contain boolean values or values that can be converted to boolean")
+                raise ValueError(
+                    f"Column '{condition_col}' must contain boolean values "
+                    f"or values that can be converted to boolean"
+                )
 
         return df[df[condition_col]].groupby(year_col).size()
     except KeyError as e:
@@ -125,7 +145,7 @@ def count_records_by_year_with_condition(
 
 
 def create_yearly_comparison(
-    df: pd.DataFrame, condition_col: str, year_col: str = 'year'
+    df: pd.DataFrame, condition_col: str, year_col: str = YEAR_COL
 ) -> pd.DataFrame:
     """
     Create a DataFrame comparing total records vs. records meeting a condition by year.
@@ -172,19 +192,28 @@ def create_yearly_comparison(
         raise ValueError("year_col cannot be empty")
 
     if condition_col not in df.columns:
-        raise KeyError(f"Column '{condition_col}' not found in DataFrame. Available columns: {', '.join(df.columns)}")
+        available_cols = ', '.join(df.columns)
+        raise KeyError(
+            f"Column '{condition_col}' not found in DataFrame. "
+            f"Available columns: {available_cols}"
+        )
 
     if year_col not in df.columns:
-        raise KeyError(f"Column '{year_col}' not found in DataFrame. Available columns: {', '.join(df.columns)}")
+        available_cols = ', '.join(df.columns)
+        raise KeyError(
+            f"Column '{year_col}' not found in DataFrame. "
+            f"Available columns: {available_cols}"
+        )
 
     try:
         # count_records_by_year and count_records_by_year_with_condition already validate their inputs
         total_records = count_records_by_year(df, year_col)
         condition_records = count_records_by_year_with_condition(df, condition_col, year_col)
 
+        condition_label = RECORDS_WITH_CONDITION_FORMAT.format(condition_col)
         comparison_df = pd.DataFrame({
-            'Total Records': total_records,
-            f'Records with {condition_col}': condition_records
+            TOTAL_RECORDS_COL: total_records,
+            condition_label: condition_records
         }).fillna(0)
 
         return comparison_df
@@ -270,30 +299,35 @@ def get_summary_statistics(df: pd.DataFrame) -> Dict[str, int]:
 
     try:
         stats = {
-            'total_records': len(df),
-            'missing_values': df.isna().sum().sum()
+            STAT_TOTAL_RECORDS: len(df),
+            STAT_MISSING_VALUES: df.isna().sum().sum()
         }
 
         # Add year statistics if the column exists
-        if 'year' in df.columns:
-            stats['unique_years'] = df['year'].nunique()
+        if YEAR_COL in df.columns:
+            stats[STAT_UNIQUE_YEARS] = df[YEAR_COL].nunique()
         else:
-            stats['unique_years'] = 0
+            stats[STAT_UNIQUE_YEARS] = 0
 
         # Add FS statistics if the column exists
-        if 'in_fs' in df.columns:
-            if pd.api.types.is_bool_dtype(df['in_fs']) or all(isinstance(x, bool) for x in df['in_fs'].dropna()):
-                stats['records_in_fs'] = df['in_fs'].sum()
+        if IN_FS_COL in df.columns:
+            is_bool_dtype = pd.api.types.is_bool_dtype(df[IN_FS_COL])
+            all_bool_values = all(
+                isinstance(x, bool) for x in df[IN_FS_COL].dropna()
+            )
+
+            if is_bool_dtype or all_bool_values:
+                stats[STAT_RECORDS_IN_FS] = df[IN_FS_COL].sum()
             else:
                 # Try to convert to boolean if possible
                 try:
-                    stats['records_in_fs'] = df['in_fs'].astype(bool).sum()
+                    stats[STAT_RECORDS_IN_FS] = df[IN_FS_COL].astype(bool).sum()
                 except Exception:
-                    stats['records_in_fs'] = 0
+                    stats[STAT_RECORDS_IN_FS] = 0
 
         # Add surname statistics if the column exists
-        if 'normalized_surname' in df.columns:
-            stats['unique_surnames'] = df['normalized_surname'].nunique()
+        if NORMALIZED_SURNAME_COL in df.columns:
+            stats[STAT_UNIQUE_SURNAMES] = df[NORMALIZED_SURNAME_COL].nunique()
 
         return stats
     except Exception as e:

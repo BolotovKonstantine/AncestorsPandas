@@ -101,10 +101,16 @@ def parse_dates(df: pd.DataFrame, date_column: str) -> pd.DataFrame:
         raise ValueError("date_column cannot be empty")
 
     if date_column not in df.columns:
-        raise ValueError(f"Column '{date_column}' not found in DataFrame. Available columns: {', '.join(df.columns)}")
+        available_cols = ', '.join(df.columns)
+        raise ValueError(
+            f"Column '{date_column}' not found in DataFrame. "
+            f"Available columns: {available_cols}"
+        )
 
     try:
-        df[date_column] = pd.to_datetime(df[date_column], dayfirst=True, errors='coerce')
+        df[date_column] = pd.to_datetime(
+            df[date_column], dayfirst=True, errors='coerce'
+        )
         return df
     except Exception as e:
         raise ValueError(f"Error parsing dates in column {date_column}: {str(e)}")
@@ -183,7 +189,11 @@ def apply_surname_normalization(
         raise ValueError("target_col cannot be empty")
 
     if source_col not in df.columns:
-        raise KeyError(f"Column '{source_col}' not found in DataFrame. Available columns: {', '.join(df.columns)}")
+        available_cols = ', '.join(df.columns)
+        raise KeyError(
+            f"Column '{source_col}' not found in DataFrame. "
+            f"Available columns: {available_cols}"
+        )
 
     try:
         df[target_col] = df[source_col].apply(normalize_surname)

@@ -15,7 +15,7 @@ from ancestors_pandas import cli
 from config import (
     BIRTHS_FILE, MARRIAGES_FILE, DEATHS_FILE,
     BIRTHS_DATE_COL, MARRIAGES_DATE_COL, DEATHS_DATE_COL,
-    SURNAME_COL, FS_COL
+    SURNAME_COL, FS_COL, IN_FS_COL, NORMALIZED_SURNAME_COL
 )
 
 
@@ -45,16 +45,16 @@ def main():
 
         # Display basic information
         log.info(f"Total records in Births file: {len(births_df)}")
-        log.info(f"Total records in Births FS: {births_df['in_fs'].sum()}")
+        log.info(f"Total records in Births FS: {births_df[IN_FS_COL].sum()}")
         log.info(f"Total records in Marriages file: {len(marriages_df)}")
-        log.info(f"Total records in Marriages FS: {marriages_df['in_fs'].sum()}")
+        log.info(f"Total records in Marriages FS: {marriages_df[IN_FS_COL].sum()}")
         log.info(f"Total records in Deaths file: {len(deaths_df)}")
-        log.info(f"Total records in Deaths FS: {deaths_df['in_fs'].sum()}")
+        log.info(f"Total records in Deaths FS: {deaths_df[IN_FS_COL].sum()}")
 
         # Analyze data
         log.info("Analyzing data...")
-        yearly_comparison = statistics.create_yearly_comparison(births_df, "in_fs")
-        surname_counts = statistics.count_values(births_df, "normalized_surname")
+        yearly_comparison = statistics.create_yearly_comparison(births_df, IN_FS_COL)
+        surname_counts = statistics.count_values(births_df, NORMALIZED_SURNAME_COL)
 
         # Visualize data
         log.info("Visualizing data...")

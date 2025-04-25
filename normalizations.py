@@ -5,20 +5,44 @@ DataFrames (except for purely string-level transformations).
 """
 
 import pandas as pd
+from config import (
+    CSV_SEPARATOR, CSV_ENCODING, DATE_FORMAT_DAYFIRST,
+    YEAR_COL, NORMALIZED_SURNAME_COL, IN_FS_COL,
+    FEMALE_SURNAME_SUFFIX
+)
 
 def load_and_normalize(filepath, date_col=None, surname_col=None, fs_col=None):
-    df = pd.read_csv(filepath, sep=';', encoding='utf-8')
+    """
+    Load a CSV file and apply normalization operations.
+
+    Parameters:
+    -----------
+    filepath : str
+        Path to the CSV file to load.
+    date_col : str, optional
+        Name of the date column to parse. If provided, a year column will be added.
+    surname_col : str, optional
+        Name of the surname column to normalize. If provided, a normalized surname column will be added.
+    fs_col : str, optional
+        Name of the FamilySearch ID column. If provided, an in_fs boolean column will be added.
+
+    Returns:
+    --------
+    pd.DataFrame
+        Normalized DataFrame with additional columns based on the provided parameters.
+    """
+    df = pd.read_csv(filepath, sep=CSV_SEPARATOR, encoding=CSV_ENCODING)
     df = strip_column_names(df)
     df = strip_string_values(df)
     if date_col:
         df = parse_dates(df, date_column=date_col)
         # Example: add a year column
-        df['year'] = df[date_col].dt.year
+        df[YEAR_COL] = df[date_col].dt.year
     if surname_col:
         df = apply_surname_normalization(df, source_col=surname_col,
-                                         target_col='normalized_surname')
+                                         target_col=NORMALIZED_SURNAME_COL)
     if fs_col:
-        df['in_fs'] = df[fs_col].notna()
+        df[IN_FS_COL] = df[fs_col].notna()
     return df
 
 
@@ -63,13 +87,13 @@ def parse_dates(df: pd.DataFrame, date_column: str) -> pd.DataFrame:
     Returns:
     pd.DataFrame: DataFrame with converted date column.
     """
-    df[date_column] = pd.to_datetime(df[date_column], dayfirst=True, errors='coerce')
+    df[date_column] = pd.to_datetime(df[date_column], dayfirst=DATE_FORMAT_DAYFIRST, errors='coerce')
     return df
 
 
 def normalize_surname(surname: str) -> str:
     """
-    Normalizes a given surname by removing a trailing 'а'.
+    Normalizes a given surname by removing a trailing feminine suffix.
 
     Parameters:
     surname (str): Input surname string.
@@ -77,7 +101,7 @@ def normalize_surname(surname: str) -> str:
     Returns:
     str: Normalized surname.
     """
-    if isinstance(surname, str) and surname.endswith("а"):
+    if isinstance(surname, str) and surname.endswith(FEMALE_SURNAME_SUFFIX):
         return surname[:-1]
     return surname
 

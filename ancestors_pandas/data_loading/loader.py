@@ -125,7 +125,11 @@ def load_and_normalize(
         if date_col:
             # Check if date_col exists in the DataFrame
             if date_col not in df.columns:
-                raise ValueError(f"Date column '{date_col}' not found in DataFrame. Available columns: {', '.join(df.columns)}")
+                available_cols = ', '.join(df.columns)
+                raise ValueError(
+                    f"Date column '{date_col}' not found in DataFrame. "
+                    f"Available columns: {available_cols}"
+                )
 
             df = normalizations.parse_dates(df, date_column=date_col)
             # Add a year column
@@ -134,7 +138,11 @@ def load_and_normalize(
         if surname_col:
             # Check if surname_col exists in the DataFrame
             if surname_col not in df.columns:
-                raise ValueError(f"Surname column '{surname_col}' not found in DataFrame. Available columns: {', '.join(df.columns)}")
+                available_cols = ', '.join(df.columns)
+                raise ValueError(
+                    f"Surname column '{surname_col}' not found in DataFrame. "
+                    f"Available columns: {available_cols}"
+                )
 
             df = normalizations.apply_surname_normalization(
                 df, source_col=surname_col, target_col='normalized_surname'
@@ -143,7 +151,11 @@ def load_and_normalize(
         if fs_col:
             # Check if fs_col exists in the DataFrame
             if fs_col not in df.columns:
-                raise ValueError(f"FS column '{fs_col}' not found in DataFrame. Available columns: {', '.join(df.columns)}")
+                available_cols = ', '.join(df.columns)
+                raise ValueError(
+                    f"FS column '{fs_col}' not found in DataFrame. "
+                    f"Available columns: {available_cols}"
+                )
 
             df['in_fs'] = df[fs_col].notna()
 
