@@ -10,6 +10,7 @@ import sys
 import pandas as pd
 import datetime
 from typing import List, Optional, Union
+from tqdm import tqdm
 
 from ancestors_pandas import logger
 from ancestors_pandas.data_loading import loader
@@ -399,19 +400,33 @@ def cmd_analyze(args: argparse.Namespace, log: logger.logging.Logger) -> int:
 
     log.info("Analyzing data...")
 
-    births_df = loader.load_and_normalize(
-        args.births, date_col="Дата рождения", surname_col="Фамилия", fs_col="FS"
-    )
+    # Create a progress bar for the analysis process
+    analysis_steps = 1  # Start with 1 for data loading
+    if hasattr(args, 'by_year') and args.by_year:
+        analysis_steps += 1
+    if hasattr(args, 'by_surname') and args.by_surname:
+        analysis_steps += 1
 
-    if args.by_year:
-        log.info("Analyzing records by year...")
-        yearly_comparison = statistics.create_yearly_comparison(births_df, "in_fs")
-        log.info("\nYearly comparison:\n" + str(yearly_comparison))
+    with tqdm(total=analysis_steps, desc="Data analysis") as pbar:
+        pbar.set_description("Loading and normalizing data")
+        births_df = loader.load_and_normalize(
+            args.births, date_col="Дата рождения", surname_col="Фамилия", fs_col="FS"
+        )
+        pbar.update(1)
 
-    if args.by_surname:
-        log.info("Analyzing records by surname...")
-        surname_counts = statistics.count_values(births_df, "normalized_surname")
-        log.info("\nTop 10 surnames:\n" + str(surname_counts.head(10)))
+        if args.by_year:
+            pbar.set_description("Analyzing records by year")
+            yearly_comparison = statistics.create_yearly_comparison(births_df, "in_fs")
+            log.info("\nYearly comparison:\n" + str(yearly_comparison))
+            pbar.update(1)
+
+        if args.by_surname:
+            pbar.set_description("Analyzing records by surname")
+            surname_counts = statistics.count_values(births_df, "normalized_surname")
+            log.info("\nTop 10 surnames:\n" + str(surname_counts.head(10)))
+            pbar.update(1)
+
+        pbar.set_description("Analysis complete")
 
     return 0
 
@@ -468,34 +483,54 @@ def cmd_visualize(args: argparse.Namespace, log: logger.logging.Logger) -> int:
 
     log.info("Visualizing data...")
 
-    births_df = loader.load_and_normalize(
-        args.births, date_col="Дата рождения", surname_col="Фамилия", fs_col="FS"
-    )
+    # Create a progress bar for the visualization process
+    visualization_steps = 1  # Start with 1 for data loading
+    if hasattr(args, 'yearly_counts') and args.yearly_counts:
+        visualization_steps += 3  # Data preparation, analysis, and plotting
+    if hasattr(args, 'surname_counts') and args.surname_counts:
+        visualization_steps += 2  # Analysis and plotting
 
-    if args.yearly_counts:
-        log.info("Plotting yearly counts...")
-        records_by_year = statistics.count_records_by_year(births_df)
-        records_by_year_in_fs = statistics.count_records_by_year_with_condition(
-            births_df, "in_fs"
+    with tqdm(total=visualization_steps, desc="Data visualization") as pbar:
+        pbar.set_description("Loading and normalizing data")
+        births_df = loader.load_and_normalize(
+            args.births, date_col="Дата рождения", surname_col="Фамилия", fs_col="FS"
         )
+        pbar.update(1)
 
-        yearly_counts = {
-            'Total Records': records_by_year,
-            'Records in FS': records_by_year_in_fs
-        }
-        yearly_counts_df = pd.DataFrame(yearly_counts).fillna(0)
+        if args.yearly_counts:
+            pbar.set_description("Counting records by year")
+            records_by_year = statistics.count_records_by_year(births_df)
+            records_by_year_in_fs = statistics.count_records_by_year_with_condition(
+                births_df, "in_fs"
+            )
+            pbar.update(1)
 
-        plots.plot_yearly_counts(
-            yearly_counts_df, save_path=args.save
-        )
+            pbar.set_description("Preparing yearly counts data")
+            yearly_counts = {
+                'Total Records': records_by_year,
+                'Records in FS': records_by_year_in_fs
+            }
+            yearly_counts_df = pd.DataFrame(yearly_counts).fillna(0)
+            pbar.update(1)
 
-    if args.surname_counts:
-        log.info("Plotting surname counts...")
-        surname_counts = statistics.count_values(births_df, "normalized_surname")
+            pbar.set_description("Plotting yearly counts")
+            plots.plot_yearly_counts(
+                yearly_counts_df, save_path=args.save
+            )
+            pbar.update(1)
 
-        plots.plot_surname_counts(
-            surname_counts, top_n=args.top_n, save_path=args.save
-        )
+        if args.surname_counts:
+            pbar.set_description("Counting surname occurrences")
+            surname_counts = statistics.count_values(births_df, "normalized_surname")
+            pbar.update(1)
+
+            pbar.set_description("Plotting surname counts")
+            plots.plot_surname_counts(
+                surname_counts, top_n=args.top_n, save_path=args.save
+            )
+            pbar.update(1)
+
+        pbar.set_description("Visualization complete")
 
     return 0
 
@@ -556,66 +591,77 @@ def cmd_view_history(args: argparse.Namespace, log: logger.logging.Logger) -> in
     log.info(f"Retrieving {args.type} statistics from database...")
 
     try:
-        # Retrieve data based on the type
-        if args.type == "summary":
-            df = stats_retriever.export_summary_statistics_to_dataframe(
-                start_date=args.start_date if hasattr(args, 'start_date') else None,
-                end_date=args.end_date if hasattr(args, 'end_date') else None,
-                data_source=args.data_source if hasattr(args, 'data_source') else None,
-                db_path=db_path
-            )
-            log.info(f"Retrieved {len(df)} summary statistics records")
-        elif args.type == "yearly":
-            df = stats_retriever.export_yearly_comparison_to_dataframe(
-                start_date=args.start_date if hasattr(args, 'start_date') else None,
-                end_date=args.end_date if hasattr(args, 'end_date') else None,
-                data_source=args.data_source if hasattr(args, 'data_source') else None,
-                condition_name=args.condition_name if hasattr(args, 'condition_name') else None,
-                year=args.year if hasattr(args, 'year') else None,
-                db_path=db_path
-            )
-            log.info(f"Retrieved {len(df)} yearly comparison records")
-        elif args.type == "value-counts":
-            df = stats_retriever.export_value_counts_to_dataframe(
-                column_name=args.column_name,
-                start_date=args.start_date if hasattr(args, 'start_date') else None,
-                end_date=args.end_date if hasattr(args, 'end_date') else None,
-                data_source=args.data_source if hasattr(args, 'data_source') else None,
-                value=args.value if hasattr(args, 'value') else None,
-                db_path=db_path
-            )
-            log.info(f"Retrieved {len(df)} value counts records")
-        else:
-            log.error(f"Invalid type: {args.type}")
-            return 1
+        # Create a progress bar for the data retrieval and export process
+        with tqdm(total=2, desc="Data retrieval") as pbar:
+            pbar.set_description(f"Retrieving {args.type} statistics from database")
 
-        # Check if we got any data
-        if df.empty:
-            log.error("No data found with the specified filters")
-            return 1
+            # Retrieve data based on the type
+            if args.type == "summary":
+                df = stats_retriever.export_summary_statistics_to_dataframe(
+                    start_date=args.start_date if hasattr(args, 'start_date') else None,
+                    end_date=args.end_date if hasattr(args, 'end_date') else None,
+                    data_source=args.data_source if hasattr(args, 'data_source') else None,
+                    db_path=db_path
+                )
+                log.info(f"Retrieved {len(df)} summary statistics records")
+            elif args.type == "yearly":
+                df = stats_retriever.export_yearly_comparison_to_dataframe(
+                    start_date=args.start_date if hasattr(args, 'start_date') else None,
+                    end_date=args.end_date if hasattr(args, 'end_date') else None,
+                    data_source=args.data_source if hasattr(args, 'data_source') else None,
+                    condition_name=args.condition_name if hasattr(args, 'condition_name') else None,
+                    year=args.year if hasattr(args, 'year') else None,
+                    db_path=db_path
+                )
+                log.info(f"Retrieved {len(df)} yearly comparison records")
+            elif args.type == "value-counts":
+                df = stats_retriever.export_value_counts_to_dataframe(
+                    column_name=args.column_name,
+                    start_date=args.start_date if hasattr(args, 'start_date') else None,
+                    end_date=args.end_date if hasattr(args, 'end_date') else None,
+                    data_source=args.data_source if hasattr(args, 'data_source') else None,
+                    value=args.value if hasattr(args, 'value') else None,
+                    db_path=db_path
+                )
+                log.info(f"Retrieved {len(df)} value counts records")
+            else:
+                log.error(f"Invalid type: {args.type}")
+                return 1
 
-        # Output the data in the requested format
-        if args.format == "table":
-            # Print as a formatted table
-            pd.set_option('display.max_rows', None)
-            pd.set_option('display.max_columns', None)
-            pd.set_option('display.width', None)
-            print(df)
-        elif args.format == "csv":
-            # Export to CSV
-            stats_retriever.export_to_csv(df, args.output)
-            log.info(f"Data exported to CSV: {args.output}")
-        elif args.format == "json":
-            # Export to JSON
-            stats_retriever.export_to_json(df, args.output)
-            log.info(f"Data exported to JSON: {args.output}")
-        elif args.format == "excel":
-            # Export to Excel
-            stats_retriever.export_to_excel(df, args.output)
-            log.info(f"Data exported to Excel: {args.output}")
-        else:
-            log.error(f"Invalid format: {args.format}")
-            return 1
+            pbar.update(1)
+
+            # Check if we got any data
+            if df.empty:
+                log.error("No data found with the specified filters")
+                return 1
+
+            pbar.set_description(f"Outputting data in {args.format} format")
+
+            # Output the data in the requested format
+            if args.format == "table":
+                # Print as a formatted table
+                pd.set_option('display.max_rows', None)
+                pd.set_option('display.max_columns', None)
+                pd.set_option('display.width', None)
+                print(df)
+            elif args.format == "csv":
+                # Export to CSV
+                stats_retriever.export_to_csv(df, args.output)
+                log.info(f"Data exported to CSV: {args.output}")
+            elif args.format == "json":
+                # Export to JSON
+                stats_retriever.export_to_json(df, args.output)
+                log.info(f"Data exported to JSON: {args.output}")
+            elif args.format == "excel":
+                # Export to Excel
+                stats_retriever.export_to_excel(df, args.output)
+                log.info(f"Data exported to Excel: {args.output}")
+            else:
+                log.error(f"Invalid format: {args.format}")
+                return 1
+
+            pbar.update(1)
+            pbar.set_description("Data retrieval complete")
 
         return 0
     except ValueError as e:

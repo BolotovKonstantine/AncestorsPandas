@@ -76,7 +76,7 @@ This document contains a detailed list of actionable improvement tasks for the A
 44. [x] Add options to save visualizations to files
 45. [ ] Create a simple web interface for viewing results
 46. [x] Add customization options for visualizations (colors, labels, etc.) - Figure size, titles, and labels customization implemented
-47. [ ] Implement progress indicators for long-running operations
+47. [x] Implement progress indicators for long-running operations
 48. [ ] Add support for different output formats (CSV, JSON, etc.)
 49. [ ] Create a dashboard with multiple visualizations
 

@@ -98,6 +98,7 @@ Through these analyses, I was able to:
   - [Matplotlib](https://matplotlib.org/): for creating visualizations   
   - [Django](https://www.djangoproject.com/): for the web interface   
   - [Bootstrap](https://getbootstrap.com/): for responsive web design   
+  - [tqdm](https://github.com/tqdm/tqdm): for progress indicators in long-running operations   
 
 # Useful Websites
 - [Pandas Documentation](https://pandas.pydata.org/docs/)

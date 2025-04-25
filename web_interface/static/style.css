@@ -1,0 +1,28 @@
+/* Main stylesheet for AncestorsPandas web interface */
+
+body {
+    font-family: 'Arial', sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f8f9fa;
+}
+
+.navbar-brand {
+    font-weight: bold;
+}
+
+.card {
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    font-weight: bold;
+}
+
+footer {
+    margin-top: 30px;
+    padding: 20px 0;
+    background-color: #343a40;
+    color: white;
+}

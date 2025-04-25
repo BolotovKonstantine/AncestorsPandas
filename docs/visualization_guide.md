@@ -15,6 +15,8 @@ This guide explains how to use the visualization features in AncestorsPandas, pa
 
 AncestorsPandas provides basic visualization capabilities through the `visualize` command:
 
+> **Note:** All visualization operations now display progress indicators to keep you informed during long-running operations.
+
 ```bash
 python main.py visualize --yearly-counts
 python main.py visualize --surname-counts
