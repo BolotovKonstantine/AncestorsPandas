@@ -54,6 +54,18 @@ For a more in-depth overview of the project, including a demonstration of the da
    ```
    This will display available commands and options.
 
+3. **Visualizing historical data**
+   ```bash
+   python main.py visualize-history --over-time --value-column total_records
+   ```
+   See the [Visualization Guide](docs/visualization_guide.md) for detailed instructions on using the visualization features.
+
+4. **Running example scripts**
+   ```bash
+   python examples/visualize_history_example.py --example 1
+   ```
+   The examples directory contains ready-to-run scripts demonstrating various features of the application.
+
 # Data Analysis Results
 - The number of records in the dataset was grouped by year, revealing trends in how many births fall into each year.
 - A subset of the data (specified by a particular field) was isolated and analyzed to determine how many of those records belong to the subset versus the entire dataset.
@@ -77,5 +89,6 @@ Through these analyses, I was able to:
 
 # Future Work
 - Expand data cleaning functionality to handle more missing and malformed data.
-- Incorporate additional visualizations for deeper insights (e.g., pie charts, line graphs).
+- Implement interactive visualizations for more dynamic data exploration.
 - Automate the generation of reports to share with collaborators.
+- Add more advanced statistical analysis capabilities.

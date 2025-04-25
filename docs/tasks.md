@@ -96,9 +96,9 @@ This document contains a detailed list of actionable improvement tasks for the A
     - 52.1. [x] Create functions to query historical calculation data
     - 52.2. [x] Add filtering options by date, data source, and statistic type
     - 52.3. [x] Implement export functionality for historical data
-53. [ ] Add visualization for historical data
-    - 53.1. [ ] Create plots showing changes in statistics over time
-    - 53.2. [ ] Implement comparison visualizations between different data updates
+53. [x] Add visualization for historical data
+    - 53.1. [x] Create plots showing changes in statistics over time
+    - 53.2. [x] Implement comparison visualizations between different data updates
 54. [ ] Update main application to use database logging
     - 54.1. [ ] Modify main.py to log statistics after calculations
     - 54.2. [ ] Add command-line options for viewing historical data

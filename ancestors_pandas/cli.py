@@ -8,12 +8,14 @@ and visualizations.
 import argparse
 import sys
 import pandas as pd
-from typing import List, Optional
+import datetime
+from typing import List, Optional, Union
 
 from ancestors_pandas import logger
 from ancestors_pandas.data_loading import loader
 from ancestors_pandas.analysis import statistics
 from ancestors_pandas.visualization import plots
+from ancestors_pandas.database import stats_retriever
 
 
 def parse_args(args: Optional[List[str]] = None) -> argparse.Namespace:
@@ -121,6 +123,55 @@ def parse_args(args: Optional[List[str]] = None) -> argparse.Namespace:
         "--save", help="Save the plot to a file instead of displaying it"
     )
 
+    # Visualize History command
+    visualize_history_parser = subparsers.add_parser(
+        "visualize-history", help="Visualize historical statistics from the database"
+    )
+    visualize_history_parser.add_argument(
+        "--over-time", action="store_true", 
+        help="Plot changes in statistics over time"
+    )
+    visualize_history_parser.add_argument(
+        "--comparison", action="store_true", 
+        help="Plot comparison between different data updates"
+    )
+    visualize_history_parser.add_argument(
+        "--data-source", 
+        help="Filter by data source (births, marriages, deaths)"
+    )
+    visualize_history_parser.add_argument(
+        "--value-column", required=True,
+        help="Column containing the values to visualize (e.g., total_records, records_in_fs)"
+    )
+    visualize_history_parser.add_argument(
+        "--group-column", 
+        help="Column to group by for comparison (e.g., year, value)"
+    )
+    visualize_history_parser.add_argument(
+        "--start-date", 
+        help="Start date for filtering (YYYY-MM-DD)"
+    )
+    visualize_history_parser.add_argument(
+        "--end-date", 
+        help="End date for filtering (YYYY-MM-DD)"
+    )
+    visualize_history_parser.add_argument(
+        "--max-dates", type=int, default=2,
+        help="Maximum number of dates to compare (default: 2)"
+    )
+    visualize_history_parser.add_argument(
+        "--plot-type", choices=["bar", "barh", "line"], default="bar",
+        help="Type of plot for comparison (default: bar)"
+    )
+    visualize_history_parser.add_argument(
+        "--title", 
+        help="Custom title for the plot"
+    )
+    visualize_history_parser.add_argument(
+        "--save", 
+        help="Save the plot to a file instead of displaying it"
+    )
+
     return parser.parse_args(args)
 
 
@@ -167,6 +218,8 @@ def main(args: Optional[List[str]] = None) -> int:
             return cmd_analyze(parsed_args, log)
         elif parsed_args.command == "visualize":
             return cmd_visualize(parsed_args, log)
+        elif parsed_args.command == "visualize-history":
+            return cmd_visualize_history(parsed_args, log)
         else:
             log.error("No command specified. Use --help for usage information.")
             return 1
@@ -378,6 +431,164 @@ def cmd_visualize(args: argparse.Namespace, log: logger.logging.Logger) -> int:
         plots.plot_surname_counts(
             surname_counts, top_n=args.top_n, save_path=args.save
         )
+
+    return 0
+
+
+def cmd_visualize_history(args: argparse.Namespace, log: logger.logging.Logger) -> int:
+    """
+    Visualize historical statistics from the database.
+
+    Parameters:
+    -----------
+    args : argparse.Namespace
+        Parsed arguments.
+    log : logging.Logger
+        Logger instance.
+
+    Returns:
+    --------
+    int
+        Exit code.
+
+    Raises:
+    -------
+    TypeError
+        If args is not an argparse.Namespace or log is not a logger.logging.Logger.
+    ValueError
+        If required arguments are missing or invalid.
+    Exception
+        For other errors during data visualization.
+    """
+    # Validate input
+    if not isinstance(args, argparse.Namespace):
+        raise TypeError(f"args must be an argparse.Namespace, got {type(args).__name__}")
+
+    if not isinstance(log, logger.logging.Logger):
+        raise TypeError(f"log must be a logging.Logger, got {type(log).__name__}")
+
+    # Check if at least one visualization option is selected
+    if not (hasattr(args, 'over_time') and args.over_time) and not (hasattr(args, 'comparison') and args.comparison):
+        log.warning("No visualization option selected. Use --over-time or --comparison.")
+        return 1
+
+    # Validate required arguments
+    if not hasattr(args, 'value_column') or not args.value_column:
+        log.error("Missing required argument: value_column")
+        return 1
+
+    # For comparison visualization, group_column is required
+    if args.comparison and (not hasattr(args, 'group_column') or not args.group_column):
+        log.error("Missing required argument for comparison: group_column")
+        return 1
+
+    log.info("Visualizing historical statistics...")
+
+    # Process date arguments
+    start_date = None
+    end_date = None
+
+    if hasattr(args, 'start_date') and args.start_date:
+        try:
+            start_date = args.start_date
+        except ValueError:
+            log.error(f"Invalid start date format: {args.start_date}. Use YYYY-MM-DD.")
+            return 1
+
+    if hasattr(args, 'end_date') and args.end_date:
+        try:
+            end_date = args.end_date
+        except ValueError:
+            log.error(f"Invalid end date format: {args.end_date}. Use YYYY-MM-DD.")
+            return 1
+
+    # Determine which type of data to retrieve based on the value_column
+    if args.value_column.startswith('total_') or args.value_column.startswith('records_'):
+        # Summary statistics
+        try:
+            df = stats_retriever.export_summary_statistics_to_dataframe(
+                start_date=start_date,
+                end_date=end_date,
+                data_source=args.data_source
+            )
+            log.info(f"Retrieved {len(df)} summary statistics records")
+        except Exception as e:
+            log.error(f"Error retrieving summary statistics: {str(e)}")
+            return 1
+    elif args.value_column == 'count':
+        # Value counts
+        try:
+            df = stats_retriever.export_value_counts_to_dataframe(
+                column_name=args.group_column,
+                start_date=start_date,
+                end_date=end_date,
+                data_source=args.data_source
+            )
+            log.info(f"Retrieved {len(df)} value counts records")
+        except Exception as e:
+            log.error(f"Error retrieving value counts: {str(e)}")
+            return 1
+    else:
+        # Yearly comparison
+        try:
+            df = stats_retriever.export_yearly_comparison_to_dataframe(
+                start_date=start_date,
+                end_date=end_date,
+                data_source=args.data_source
+            )
+            log.info(f"Retrieved {len(df)} yearly comparison records")
+        except Exception as e:
+            log.error(f"Error retrieving yearly comparison data: {str(e)}")
+            return 1
+
+    # Check if we got any data
+    if df.empty:
+        log.error("No data found with the specified filters")
+        return 1
+
+    # Visualize the data
+    try:
+        if args.over_time:
+            log.info("Plotting statistics over time...")
+
+            # Set custom title if provided
+            title = args.title if hasattr(args, 'title') and args.title else f"{args.value_column} Over Time"
+
+            plots.plot_statistics_over_time(
+                df=df,
+                value_column=args.value_column,
+                data_source_column='data_source' if hasattr(args, 'data_source') and args.data_source is None else None,
+                title=title,
+                save_path=args.save if hasattr(args, 'save') and args.save else None
+            )
+            log.info("Statistics over time plot created successfully")
+
+        if args.comparison:
+            log.info("Plotting statistics comparison...")
+
+            # Set custom title if provided
+            title = args.title if hasattr(args, 'title') and args.title else f"{args.value_column} Comparison"
+
+            # Get plot type
+            kind = args.plot_type if hasattr(args, 'plot_type') and args.plot_type else 'bar'
+
+            # Get max dates
+            max_dates = args.max_dates if hasattr(args, 'max_dates') and args.max_dates else 2
+
+            plots.plot_statistics_comparison(
+                df=df,
+                value_column=args.value_column,
+                group_column=args.group_column,
+                max_dates=max_dates,
+                title=title,
+                kind=kind,
+                save_path=args.save if hasattr(args, 'save') and args.save else None
+            )
+            log.info("Statistics comparison plot created successfully")
+
+    except Exception as e:
+        log.error(f"Error visualizing historical data: {str(e)}")
+        return 1
 
     return 0
 
