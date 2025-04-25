@@ -98,6 +98,11 @@ if __name__ == "__main__":
     # If command-line arguments are provided, use the CLI module
     if len(sys.argv) > 1:
         sys.exit(cli.main())
-    # Otherwise, run the main function
+    # Otherwise, run the main function with default settings
     else:
+        # You can also run the CLI with specific commands
+        # For example, to view historical data:
+        # sys.exit(cli.main(["view-history", "--type", "summary"]))
+        # Or to visualize historical data:
+        # sys.exit(cli.main(["visualize-history", "--over-time", "--value-column", "total_records"]))
         sys.exit(main())

@@ -16,6 +16,7 @@ from ancestors_pandas.data_loading import loader
 from ancestors_pandas.analysis import statistics
 from ancestors_pandas.visualization import plots
 from ancestors_pandas.database import stats_retriever
+from config import DB_FILE, DB_HISTORY_LIMIT
 
 
 def parse_args(args: Optional[List[str]] = None) -> argparse.Namespace:
@@ -58,6 +59,17 @@ def parse_args(args: Optional[List[str]] = None) -> argparse.Namespace:
     parser.add_argument(
         "--log-file",
         help="Path to the log file"
+    )
+    parser.add_argument(
+        "--db-path",
+        default=DB_FILE,
+        help=f"Path to the database file (default: {DB_FILE})"
+    )
+    parser.add_argument(
+        "--db-history-limit",
+        type=int,
+        default=DB_HISTORY_LIMIT,
+        help=f"Maximum number of historical records to retrieve (default: {DB_HISTORY_LIMIT})"
     )
 
     # Create subparsers for different commands
@@ -121,6 +133,57 @@ def parse_args(args: Optional[List[str]] = None) -> argparse.Namespace:
     )
     visualize_parser.add_argument(
         "--save", help="Save the plot to a file instead of displaying it"
+    )
+
+    # View History command
+    view_history_parser = subparsers.add_parser(
+        "view-history", help="View historical statistics from the database"
+    )
+    view_history_parser.add_argument(
+        "--type", required=True,
+        choices=["summary", "yearly", "value-counts"],
+        help="Type of statistics to view"
+    )
+    view_history_parser.add_argument(
+        "--data-source", 
+        help="Filter by data source (births, marriages, deaths)"
+    )
+    view_history_parser.add_argument(
+        "--start-date", 
+        help="Start date for filtering (YYYY-MM-DD)"
+    )
+    view_history_parser.add_argument(
+        "--end-date", 
+        help="End date for filtering (YYYY-MM-DD)"
+    )
+    view_history_parser.add_argument(
+        "--column-name",
+        help="Column name for value counts (required for value-counts type)"
+    )
+    view_history_parser.add_argument(
+        "--condition-name",
+        help="Condition name for yearly comparison (default: in_fs)"
+    )
+    view_history_parser.add_argument(
+        "--year",
+        type=int,
+        help="Filter by specific year (for yearly comparison)"
+    )
+    view_history_parser.add_argument(
+        "--value",
+        help="Filter by specific value (for value counts)"
+    )
+    view_history_parser.add_argument(
+        "--format", choices=["table", "csv", "json", "excel"], default="table",
+        help="Output format (default: table)"
+    )
+    view_history_parser.add_argument(
+        "--output",
+        help="Output file path (required for csv, json, and excel formats)"
+    )
+    view_history_parser.add_argument(
+        "--limit", type=int,
+        help=f"Maximum number of records to retrieve (default: {DB_HISTORY_LIMIT})"
     )
 
     # Visualize History command
@@ -218,6 +281,8 @@ def main(args: Optional[List[str]] = None) -> int:
             return cmd_analyze(parsed_args, log)
         elif parsed_args.command == "visualize":
             return cmd_visualize(parsed_args, log)
+        elif parsed_args.command == "view-history":
+            return cmd_view_history(parsed_args, log)
         elif parsed_args.command == "visualize-history":
             return cmd_visualize_history(parsed_args, log)
         else:
@@ -435,6 +500,132 @@ def cmd_visualize(args: argparse.Namespace, log: logger.logging.Logger) -> int:
     return 0
 
 
+def cmd_view_history(args: argparse.Namespace, log: logger.logging.Logger) -> int:
+    """
+    View historical statistics from the database.
+
+    Parameters:
+    -----------
+    args : argparse.Namespace
+        Parsed arguments.
+    log : logging.Logger
+        Logger instance.
+
+    Returns:
+    --------
+    int
+        Exit code.
+
+    Raises:
+    -------
+    TypeError
+        If args is not an argparse.Namespace or log is not a logger.logging.Logger.
+    ValueError
+        If required arguments are missing or invalid.
+    Exception
+        For other errors during data retrieval.
+    """
+    # Validate input
+    if not isinstance(args, argparse.Namespace):
+        raise TypeError(f"args must be an argparse.Namespace, got {type(args).__name__}")
+
+    if not isinstance(log, logger.logging.Logger):
+        raise TypeError(f"log must be a logging.Logger, got {type(log).__name__}")
+
+    # Get database path from arguments or use default
+    db_path = args.db_path if hasattr(args, 'db_path') and args.db_path else DB_FILE
+
+    # Get history limit from arguments or use default
+    limit = args.limit if hasattr(args, 'limit') and args.limit is not None else DB_HISTORY_LIMIT
+
+    # Validate required arguments
+    if not hasattr(args, 'type') or not args.type:
+        log.error("Missing required argument: type")
+        return 1
+
+    # For value-counts type, column_name is required
+    if args.type == "value-counts" and (not hasattr(args, 'column_name') or not args.column_name):
+        log.error("Missing required argument for value-counts: column_name")
+        return 1
+
+    # For non-table formats, output is required
+    if hasattr(args, 'format') and args.format != "table" and (not hasattr(args, 'output') or not args.output):
+        log.error(f"Missing required argument for {args.format} format: output")
+        return 1
+
+    log.info(f"Retrieving {args.type} statistics from database...")
+
+    try:
+        # Retrieve data based on the type
+        if args.type == "summary":
+            df = stats_retriever.export_summary_statistics_to_dataframe(
+                start_date=args.start_date if hasattr(args, 'start_date') else None,
+                end_date=args.end_date if hasattr(args, 'end_date') else None,
+                data_source=args.data_source if hasattr(args, 'data_source') else None,
+                db_path=db_path
+            )
+            log.info(f"Retrieved {len(df)} summary statistics records")
+        elif args.type == "yearly":
+            df = stats_retriever.export_yearly_comparison_to_dataframe(
+                start_date=args.start_date if hasattr(args, 'start_date') else None,
+                end_date=args.end_date if hasattr(args, 'end_date') else None,
+                data_source=args.data_source if hasattr(args, 'data_source') else None,
+                condition_name=args.condition_name if hasattr(args, 'condition_name') else None,
+                year=args.year if hasattr(args, 'year') else None,
+                db_path=db_path
+            )
+            log.info(f"Retrieved {len(df)} yearly comparison records")
+        elif args.type == "value-counts":
+            df = stats_retriever.export_value_counts_to_dataframe(
+                column_name=args.column_name,
+                start_date=args.start_date if hasattr(args, 'start_date') else None,
+                end_date=args.end_date if hasattr(args, 'end_date') else None,
+                data_source=args.data_source if hasattr(args, 'data_source') else None,
+                value=args.value if hasattr(args, 'value') else None,
+                db_path=db_path
+            )
+            log.info(f"Retrieved {len(df)} value counts records")
+        else:
+            log.error(f"Invalid type: {args.type}")
+            return 1
+
+        # Check if we got any data
+        if df.empty:
+            log.error("No data found with the specified filters")
+            return 1
+
+        # Output the data in the requested format
+        if args.format == "table":
+            # Print as a formatted table
+            pd.set_option('display.max_rows', None)
+            pd.set_option('display.max_columns', None)
+            pd.set_option('display.width', None)
+            print(df)
+        elif args.format == "csv":
+            # Export to CSV
+            stats_retriever.export_to_csv(df, args.output)
+            log.info(f"Data exported to CSV: {args.output}")
+        elif args.format == "json":
+            # Export to JSON
+            stats_retriever.export_to_json(df, args.output)
+            log.info(f"Data exported to JSON: {args.output}")
+        elif args.format == "excel":
+            # Export to Excel
+            stats_retriever.export_to_excel(df, args.output)
+            log.info(f"Data exported to Excel: {args.output}")
+        else:
+            log.error(f"Invalid format: {args.format}")
+            return 1
+
+        return 0
+    except ValueError as e:
+        log.error(f"Value error: {str(e)}")
+        return 1
+    except Exception as e:
+        log.error(f"Error retrieving historical data: {str(e)}")
+        return 1
+
+
 def cmd_visualize_history(args: argparse.Namespace, log: logger.logging.Logger) -> int:
     """
     Visualize historical statistics from the database.
@@ -484,6 +675,12 @@ def cmd_visualize_history(args: argparse.Namespace, log: logger.logging.Logger) 
 
     log.info("Visualizing historical statistics...")
 
+    # Get database path from arguments or use default
+    db_path = args.db_path if hasattr(args, 'db_path') and args.db_path else DB_FILE
+
+    # Get history limit from arguments or use default
+    max_dates = args.max_dates if hasattr(args, 'max_dates') and args.max_dates else DB_HISTORY_LIMIT
+
     # Process date arguments
     start_date = None
     end_date = None
@@ -509,7 +706,8 @@ def cmd_visualize_history(args: argparse.Namespace, log: logger.logging.Logger) 
             df = stats_retriever.export_summary_statistics_to_dataframe(
                 start_date=start_date,
                 end_date=end_date,
-                data_source=args.data_source
+                data_source=args.data_source,
+                db_path=db_path
             )
             log.info(f"Retrieved {len(df)} summary statistics records")
         except Exception as e:
@@ -522,7 +720,8 @@ def cmd_visualize_history(args: argparse.Namespace, log: logger.logging.Logger) 
                 column_name=args.group_column,
                 start_date=start_date,
                 end_date=end_date,
-                data_source=args.data_source
+                data_source=args.data_source,
+                db_path=db_path
             )
             log.info(f"Retrieved {len(df)} value counts records")
         except Exception as e:
@@ -534,7 +733,8 @@ def cmd_visualize_history(args: argparse.Namespace, log: logger.logging.Logger) 
             df = stats_retriever.export_yearly_comparison_to_dataframe(
                 start_date=start_date,
                 end_date=end_date,
-                data_source=args.data_source
+                data_source=args.data_source,
+                db_path=db_path
             )
             log.info(f"Retrieved {len(df)} yearly comparison records")
         except Exception as e:
