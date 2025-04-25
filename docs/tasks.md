@@ -92,10 +92,10 @@ This document contains a detailed list of actionable improvement tasks for the A
     - 51.2. [x] Add logging for yearly comparisons
     - 51.3. [x] Create functions to log surname counts and other value counts
     - 51.4. [x] Store timestamps with each log entry to track when calculations were performed
-52. [ ] Implement data retrieval functionality
-    - 52.1. [ ] Create functions to query historical calculation data
-    - 52.2. [ ] Add filtering options by date, data source, and statistic type
-    - 52.3. [ ] Implement export functionality for historical data
+52. [x] Implement data retrieval functionality
+    - 52.1. [x] Create functions to query historical calculation data
+    - 52.2. [x] Add filtering options by date, data source, and statistic type
+    - 52.3. [x] Implement export functionality for historical data
 53. [ ] Add visualization for historical data
     - 53.1. [ ] Create plots showing changes in statistics over time
     - 53.2. [ ] Implement comparison visualizations between different data updates
