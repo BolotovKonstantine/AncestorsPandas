@@ -7,6 +7,53 @@ For a more in-depth overview of the project, including a demonstration of the da
 
 [Software Demo Video](http://youtube.link.goes.here)
 
+# Installation
+
+## Prerequisites
+- Python 3.8 or higher
+- Git (for cloning the repository)
+
+## Steps to Install
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/AncestorsPandas.git
+   cd AncestorsPandas
+   ```
+
+2. **Create a virtual environment (optional but recommended)**
+   ```bash
+   python -m venv venv
+   ```
+
+   Activate the virtual environment:
+   - On Windows:
+     ```bash
+     venv\Scripts\activate
+     ```
+   - On macOS/Linux:
+     ```bash
+     source venv/bin/activate
+     ```
+
+3. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+## Running the Project
+
+1. **Run the main script**
+   ```bash
+   python main.py
+   ```
+
+2. **Using the CLI interface**
+   ```bash
+   python -m ancestors_pandas.cli --help
+   ```
+   This will display available commands and options.
+
 # Data Analysis Results
 - The number of records in the dataset was grouped by year, revealing trends in how many births fall into each year.
 - A subset of the data (specified by a particular field) was isolated and analyzed to determine how many of those records belong to the subset versus the entire dataset.

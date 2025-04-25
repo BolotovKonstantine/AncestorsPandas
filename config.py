@@ -11,6 +11,10 @@ BIRTHS_FILE = f"{DATA_DIR}/births.csv"
 MARRIAGES_FILE = f"{DATA_DIR}/marriages.csv"
 DEATHS_FILE = f"{DATA_DIR}/deaths.csv"
 
+# Database settings
+DB_FILE = f"{DATA_DIR}/ancestors_stats.db"
+DB_HISTORY_LIMIT = 10  # Default number of historical records to retrieve
+
 # Column names
 BIRTHS_DATE_COL = "Дата рождения"
 MARRIAGES_DATE_COL = "Дата"

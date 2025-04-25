@@ -11,6 +11,7 @@ from ancestors_pandas import logger
 from ancestors_pandas.data_loading import loader
 from ancestors_pandas.analysis import statistics
 from ancestors_pandas.visualization import plots
+from ancestors_pandas.database import db
 from ancestors_pandas import cli
 from config import (
     BIRTHS_FILE, MARRIAGES_FILE, DEATHS_FILE,
@@ -29,6 +30,14 @@ def main():
     # Set up logging
     log = logger.setup_logger()
     log.info("Starting AncestorsPandas application")
+
+    # Initialize database
+    try:
+        log.info("Initializing database...")
+        db.init_database()
+    except db.SchemaError as e:
+        log.error(f"Database initialization error: {str(e)}")
+        return 1
 
     try:
         # Load data
@@ -55,6 +64,29 @@ def main():
         log.info("Analyzing data...")
         yearly_comparison = statistics.create_yearly_comparison(births_df, IN_FS_COL)
         surname_counts = statistics.count_values(births_df, NORMALIZED_SURNAME_COL)
+
+        # Store statistics in database
+        log.info("Storing statistics in database...")
+        try:
+            # Get summary statistics for each data source
+            births_stats = statistics.get_summary_statistics(births_df)
+            marriages_stats = statistics.get_summary_statistics(marriages_df)
+            deaths_stats = statistics.get_summary_statistics(deaths_df)
+
+            # Store summary statistics
+            db.store_summary_statistics(births_stats, "births")
+            db.store_summary_statistics(marriages_stats, "marriages")
+            db.store_summary_statistics(deaths_stats, "deaths")
+
+            # Store yearly comparison
+            db.store_yearly_comparison(yearly_comparison, "births", IN_FS_COL)
+
+            # Store surname counts
+            db.store_value_counts(surname_counts, NORMALIZED_SURNAME_COL, "births")
+
+            log.info("Statistics stored successfully")
+        except db.QueryError as e:
+            log.error(f"Error storing statistics: {str(e)}")
 
         # Visualize data
         log.info("Visualizing data...")
