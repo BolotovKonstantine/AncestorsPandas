@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - AncestorsPandas{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>{{ page_title }}</h1>
+            <p class="lead">Normalize data in "{{ data_source.name }}"</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'data_sources' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Data Sources
+            </a>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Data Source Information</h5>
+            <table class="table">
+                <tr>
+                    <th>Name:</th>
+                    <td>{{ data_source.name }}</td>
+                </tr>
+                <tr>
+                    <th>Type:</th>
+                    <td>{{ data_source.get_source_type_display }}</td>
+                </tr>
+                <tr>
+                    <th>File:</th>
+                    <td>{{ data_source.file_path }}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Normalize Data</h5>
+        </div>
+        <div class="card-body">
+            <p>Select a column and normalization type to apply to the data.</p>
+            
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="column" class="form-label">Column to Normalize</label>
+                            <select class="form-select" id="column" name="column" required>
+                                <option value="">Select a column</option>
+                                {% for column in columns %}
+                                <option value="{{ column }}">{{ column }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="normalization_type" class="form-label">Normalization Type</label>
+                            <select class="form-select" id="normalization_type" name="normalization_type" required>
+                                <option value="">Select a normalization type</option>
+                                <option value="surname">Surname Normalization</option>
+                                <option value="date">Date Normalization</option>
+                                <option value="location">Location Normalization</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="form-text">
+                        <strong>Note:</strong> Normalization will create a new column with the prefix "normalized_" followed by the original column name.
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="accordion" id="normalizationInfo">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingSurname">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSurname" aria-expanded="false" aria-controls="collapseSurname">
+                                    Surname Normalization
+                                </button>
+                            </h2>
+                            <div id="collapseSurname" class="accordion-collapse collapse" aria-labelledby="headingSurname" data-bs-parent="#normalizationInfo">
+                                <div class="accordion-body">
+                                    <p>Surname normalization performs the following operations:</p>
+                                    <ul>
+                                        <li>Converts text to lowercase</li>
+                                        <li>Removes special characters and numbers</li>
+                                        <li>Standardizes common surname variations</li>
+                                        <li>Handles prefixes like "Mc", "Mac", etc.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingDate">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDate" aria-expanded="false" aria-controls="collapseDate">
+                                    Date Normalization
+                                </button>
+                            </h2>
+                            <div id="collapseDate" class="accordion-collapse collapse" aria-labelledby="headingDate" data-bs-parent="#normalizationInfo">
+                                <div class="accordion-body">
+                                    <p>Date normalization performs the following operations:</p>
+                                    <ul>
+                                        <li>Converts various date formats to ISO format (YYYY-MM-DD)</li>
+                                        <li>Handles partial dates (year only, year and month)</li>
+                                        <li>Standardizes date separators</li>
+                                        <li>Extracts year from date strings</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingLocation">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseLocation" aria-expanded="false" aria-controls="collapseLocation">
+                                    Location Normalization
+                                </button>
+                            </h2>
+                            <div id="collapseLocation" class="accordion-collapse collapse" aria-labelledby="headingLocation" data-bs-parent="#normalizationInfo">
+                                <div class="accordion-body">
+                                    <p>Location normalization performs the following operations:</p>
+                                    <ul>
+                                        <li>Standardizes location names</li>
+                                        <li>Removes common prefixes and suffixes</li>
+                                        <li>Handles abbreviations for states, provinces, and countries</li>
+                                        <li>Standardizes separators in location hierarchies</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <p><strong>Warning:</strong> Normalization will modify the CSV file. It's recommended to back up your data before proceeding.</p>
+                </div>
+                
+                <div class="text-end">
+                    <a href="{% url 'data_source_edit' data_source.id %}" class="btn btn-secondary me-2">Cancel</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-magic"></i> Apply Normalization
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Font Awesome for icons -->
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+{% endblock %}

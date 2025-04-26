@@ -60,7 +60,11 @@ For a more in-depth overview of the project, including a demonstration of the da
    ```
    See the [Visualization Guide](docs/visualization_guide.md) for detailed instructions on using the visualization features.
 
-4. **Running example scripts**
+4. **Managing data sources**
+   The web interface provides tools for uploading, managing, and normalizing data sources.
+   See the [Data Management Guide](docs/data_management_guide.md) for detailed instructions on using these features.
+
+5. **Running example scripts**
    ```bash
    python examples/visualize_history_example.py --example 1
    ```

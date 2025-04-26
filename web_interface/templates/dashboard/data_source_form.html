@@ -1,0 +1,249 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - AncestorsPandas{% endblock %}
+
+{% block extra_css %}
+<style>
+    .preview-table {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>{{ page_title }}</h1>
+            <p class="lead">
+                {% if data_source %}
+                Edit data source information and settings
+                {% else %}
+                Upload a new CSV file and configure data source settings
+                {% endif %}
+            </p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'data_sources' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Data Sources
+            </a>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data" id="dataSourceForm">
+                {% csrf_token %}
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Name</label>
+                            <input type="text" class="form-control" id="name" name="name" 
+                                   value="{{ data_source.name|default:'' }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="source_type" class="form-label">Source Type</label>
+                            <select class="form-select" id="source_type" name="source_type" required>
+                                <option value="">Select a type</option>
+                                <option value="births" {% if data_source.source_type == 'births' %}selected{% endif %}>Births</option>
+                                <option value="marriages" {% if data_source.source_type == 'marriages' %}selected{% endif %}>Marriages</option>
+                                <option value="deaths" {% if data_source.source_type == 'deaths' %}selected{% endif %}>Deaths</option>
+                                <option value="other" {% if data_source.source_type == 'other' %}selected{% endif %}>Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3">{{ data_source.description|default:'' }}</textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="file" class="form-label">CSV File</label>
+                            <input type="file" class="form-control" id="file" name="file" accept=".csv" 
+                                   {% if not data_source %}required{% endif %}>
+                            {% if data_source %}
+                            <div class="form-text">Current file: {{ data_source.file_path|default:'No file uploaded' }}</div>
+                            <div class="form-text">Leave empty to keep the current file.</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <button type="button" id="previewBtn" class="btn btn-outline-primary">
+                                <i class="fas fa-eye"></i> Preview File
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Data Preview Section -->
+                <div id="previewSection" class="mb-4" style="display: none;">
+                    <h4>Data Preview</h4>
+                    <div class="preview-table">
+                        <table class="table table-sm table-bordered" id="previewTable">
+                            <thead id="previewHeader"></thead>
+                            <tbody id="previewBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Column Mapping Section -->
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="date_column" class="form-label">Date Column</label>
+                            <select class="form-select" id="date_column" name="date_column" required>
+                                <option value="">Select a column</option>
+                                {% if data_source %}
+                                <option value="{{ data_source.date_column }}" selected>{{ data_source.date_column }}</option>
+                                {% endif %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="surname_column" class="form-label">Surname Column</label>
+                            <select class="form-select" id="surname_column" name="surname_column" required>
+                                <option value="">Select a column</option>
+                                {% if data_source %}
+                                <option value="{{ data_source.surname_column }}" selected>{{ data_source.surname_column }}</option>
+                                {% endif %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="fs_column" class="form-label">FamilySearch Column</label>
+                            <select class="form-select" id="fs_column" name="fs_column" required>
+                                <option value="">Select a column</option>
+                                {% if data_source %}
+                                <option value="{{ data_source.fs_column }}" selected>{{ data_source.fs_column }}</option>
+                                {% endif %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> 
+                        {% if data_source %}
+                        Update Data Source
+                        {% else %}
+                        Create Data Source
+                        {% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Font Awesome for icons -->
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.getElementById('file');
+        const previewBtn = document.getElementById('previewBtn');
+        const previewSection = document.getElementById('previewSection');
+        const previewHeader = document.getElementById('previewHeader');
+        const previewBody = document.getElementById('previewBody');
+        const dateColumn = document.getElementById('date_column');
+        const surnameColumn = document.getElementById('surname_column');
+        const fsColumn = document.getElementById('fs_column');
+        
+        // Function to populate column dropdowns
+        function populateColumnDropdowns(columns) {
+            // Clear existing options except the first one
+            [dateColumn, surnameColumn, fsColumn].forEach(select => {
+                const firstOption = select.options[0];
+                select.innerHTML = '';
+                select.appendChild(firstOption);
+            });
+            
+            // Add new options
+            columns.forEach(column => {
+                [dateColumn, surnameColumn, fsColumn].forEach(select => {
+                    const option = document.createElement('option');
+                    option.value = column;
+                    option.textContent = column;
+                    
+                    // If editing, select the current values
+                    if (select === dateColumn && column === '{{ data_source.date_column|default:"" }}') {
+                        option.selected = true;
+                    } else if (select === surnameColumn && column === '{{ data_source.surname_column|default:"" }}') {
+                        option.selected = true;
+                    } else if (select === fsColumn && column === '{{ data_source.fs_column|default:"" }}') {
+                        option.selected = true;
+                    }
+                    
+                    select.appendChild(option);
+                });
+            });
+        }
+        
+        // Preview button click handler
+        previewBtn.addEventListener('click', function() {
+            if (!fileInput.files.length) {
+                alert('Please select a CSV file first.');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            
+            fetch('{% url "data_source_preview" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show preview section
+                    previewSection.style.display = 'block';
+                    
+                    // Create header row
+                    let headerHtml = '<tr>';
+                    data.columns.forEach(column => {
+                        headerHtml += `<th>${column}</th>`;
+                    });
+                    headerHtml += '</tr>';
+                    previewHeader.innerHTML = headerHtml;
+                    
+                    // Create data rows
+                    let bodyHtml = '';
+                    data.preview_data.forEach(row => {
+                        bodyHtml += '<tr>';
+                        data.columns.forEach(column => {
+                            bodyHtml += `<td>${row[column] !== null ? row[column] : ''}</td>`;
+                        });
+                        bodyHtml += '</tr>';
+                    });
+                    previewBody.innerHTML = bodyHtml;
+                    
+                    // Populate column dropdowns
+                    populateColumnDropdowns(data.columns);
+                } else {
+                    alert('Error previewing file: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while previewing the file.');
+            });
+        });
+    });
+</script>
+{% endblock %}

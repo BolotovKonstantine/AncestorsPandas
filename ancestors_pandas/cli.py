@@ -17,6 +17,7 @@ from ancestors_pandas.data_loading import loader
 from ancestors_pandas.analysis import statistics
 from ancestors_pandas.visualization import plots
 from ancestors_pandas.database import stats_retriever
+from ancestors_pandas import export
 from config import DB_FILE, DB_HISTORY_LIMIT
 
 
@@ -109,6 +110,14 @@ def parse_args(args: Optional[List[str]] = None) -> argparse.Namespace:
     analyze_parser.add_argument(
         "--by-surname", action="store_true", help="Analyze records by surname"
     )
+    analyze_parser.add_argument(
+        "--format", choices=["table", "csv", "json", "excel", "yaml", "xml"], default="table",
+        help="Output format for analysis results (default: table)"
+    )
+    analyze_parser.add_argument(
+        "--output",
+        help="Output file path (required for non-table formats)"
+    )
 
     # Visualize command
     visualize_parser = subparsers.add_parser(
@@ -134,6 +143,18 @@ def parse_args(args: Optional[List[str]] = None) -> argparse.Namespace:
     )
     visualize_parser.add_argument(
         "--save", help="Save the plot to a file instead of displaying it"
+    )
+    visualize_parser.add_argument(
+        "--export-data", action="store_true", 
+        help="Export the underlying data used for visualization"
+    )
+    visualize_parser.add_argument(
+        "--format", choices=["csv", "json", "excel", "yaml", "xml"], default="csv",
+        help="Output format for exported data (default: csv)"
+    )
+    visualize_parser.add_argument(
+        "--output",
+        help="Output file path for exported data (required when --export-data is used)"
     )
 
     # View History command
@@ -175,12 +196,12 @@ def parse_args(args: Optional[List[str]] = None) -> argparse.Namespace:
         help="Filter by specific value (for value counts)"
     )
     view_history_parser.add_argument(
-        "--format", choices=["table", "csv", "json", "excel"], default="table",
+        "--format", choices=["table", "csv", "json", "excel", "yaml", "xml"], default="table",
         help="Output format (default: table)"
     )
     view_history_parser.add_argument(
         "--output",
-        help="Output file path (required for csv, json, and excel formats)"
+        help="Output file path (required for non-table formats)"
     )
     view_history_parser.add_argument(
         "--limit", type=int,
@@ -398,6 +419,11 @@ def cmd_analyze(args: argparse.Namespace, log: logger.logging.Logger) -> int:
     if not (hasattr(args, 'by_year') and args.by_year) and not (hasattr(args, 'by_surname') and args.by_surname):
         log.warning("No analysis option selected. Use --by-year or --by-surname.")
 
+    # Check if output format is specified but not output path
+    if hasattr(args, 'format') and args.format != "table" and (not hasattr(args, 'output') or not args.output):
+        log.error(f"Missing required argument for {args.format} format: output")
+        return 1
+
     log.info("Analyzing data...")
 
     # Create a progress bar for the analysis process
@@ -406,6 +432,8 @@ def cmd_analyze(args: argparse.Namespace, log: logger.logging.Logger) -> int:
         analysis_steps += 1
     if hasattr(args, 'by_surname') and args.by_surname:
         analysis_steps += 1
+    if hasattr(args, 'format') and args.format != "table" and hasattr(args, 'output') and args.output:
+        analysis_steps += 1  # Add a step for exporting data
 
     with tqdm(total=analysis_steps, desc="Data analysis") as pbar:
         pbar.set_description("Loading and normalizing data")
@@ -414,16 +442,49 @@ def cmd_analyze(args: argparse.Namespace, log: logger.logging.Logger) -> int:
         )
         pbar.update(1)
 
+        # Initialize variables to store analysis results
+        yearly_comparison = None
+        surname_counts = None
+
         if args.by_year:
             pbar.set_description("Analyzing records by year")
             yearly_comparison = statistics.create_yearly_comparison(births_df, "in_fs")
-            log.info("\nYearly comparison:\n" + str(yearly_comparison))
+            if args.format == "table":
+                log.info("\nYearly comparison:\n" + str(yearly_comparison))
             pbar.update(1)
 
         if args.by_surname:
             pbar.set_description("Analyzing records by surname")
             surname_counts = statistics.count_values(births_df, "normalized_surname")
-            log.info("\nTop 10 surnames:\n" + str(surname_counts.head(10)))
+            if args.format == "table":
+                log.info("\nTop 10 surnames:\n" + str(surname_counts.head(10)))
+            pbar.update(1)
+
+        # Export data if requested
+        if hasattr(args, 'format') and args.format != "table" and hasattr(args, 'output') and args.output:
+            pbar.set_description(f"Exporting data to {args.format} format")
+
+            # Determine which data to export
+            if args.by_year and yearly_comparison is not None:
+                export_data = yearly_comparison
+                data_type = "yearly_comparison"
+            elif args.by_surname and surname_counts is not None:
+                # Convert Series to DataFrame for easier export
+                export_data = surname_counts.reset_index()
+                export_data.columns = ['surname', 'count']
+                data_type = "surname_counts"
+            else:
+                log.error("No data to export. Use --by-year or --by-surname to generate data.")
+                return 1
+
+            try:
+                # Export the data
+                export.export_data(export_data, args.output, format=args.format)
+                log.info(f"Data exported to {args.format.upper()} file: {args.output}")
+            except Exception as e:
+                log.error(f"Error exporting data: {str(e)}")
+                return 1
+
             pbar.update(1)
 
         pbar.set_description("Analysis complete")
@@ -481,6 +542,11 @@ def cmd_visualize(args: argparse.Namespace, log: logger.logging.Logger) -> int:
             log.error("top_n must be positive")
             return 1
 
+    # Check if export-data is specified but not output path
+    if hasattr(args, 'export_data') and args.export_data and (not hasattr(args, 'output') or not args.output):
+        log.error(f"Missing required argument for data export: output")
+        return 1
+
     log.info("Visualizing data...")
 
     # Create a progress bar for the visualization process
@@ -489,6 +555,8 @@ def cmd_visualize(args: argparse.Namespace, log: logger.logging.Logger) -> int:
         visualization_steps += 3  # Data preparation, analysis, and plotting
     if hasattr(args, 'surname_counts') and args.surname_counts:
         visualization_steps += 2  # Analysis and plotting
+    if hasattr(args, 'export_data') and args.export_data:
+        visualization_steps += 1  # Add a step for exporting data
 
     with tqdm(total=visualization_steps, desc="Data visualization") as pbar:
         pbar.set_description("Loading and normalizing data")
@@ -496,6 +564,10 @@ def cmd_visualize(args: argparse.Namespace, log: logger.logging.Logger) -> int:
             args.births, date_col="Дата рождения", surname_col="Фамилия", fs_col="FS"
         )
         pbar.update(1)
+
+        # Initialize variables to store visualization data
+        yearly_counts_df = None
+        surname_counts = None
 
         if args.yearly_counts:
             pbar.set_description("Counting records by year")
@@ -528,6 +600,33 @@ def cmd_visualize(args: argparse.Namespace, log: logger.logging.Logger) -> int:
             plots.plot_surname_counts(
                 surname_counts, top_n=args.top_n, save_path=args.save
             )
+            pbar.update(1)
+
+        # Export data if requested
+        if hasattr(args, 'export_data') and args.export_data:
+            pbar.set_description(f"Exporting data to {args.format} format")
+
+            # Determine which data to export
+            if args.yearly_counts and yearly_counts_df is not None:
+                export_data = yearly_counts_df
+                data_type = "yearly_counts"
+            elif args.surname_counts and surname_counts is not None:
+                # Convert Series to DataFrame for easier export
+                export_data = surname_counts.reset_index()
+                export_data.columns = ['surname', 'count']
+                data_type = "surname_counts"
+            else:
+                log.error("No data to export. Use --yearly-counts or --surname-counts to generate data.")
+                return 1
+
+            try:
+                # Export the data
+                export.export_data(export_data, args.output, format=args.format)
+                log.info(f"Data exported to {args.format.upper()} file: {args.output}")
+            except Exception as e:
+                log.error(f"Error exporting data: {str(e)}")
+                return 1
+
             pbar.update(1)
 
         pbar.set_description("Visualization complete")
@@ -644,18 +743,14 @@ def cmd_view_history(args: argparse.Namespace, log: logger.logging.Logger) -> in
                 pd.set_option('display.max_columns', None)
                 pd.set_option('display.width', None)
                 print(df)
-            elif args.format == "csv":
-                # Export to CSV
-                stats_retriever.export_to_csv(df, args.output)
-                log.info(f"Data exported to CSV: {args.output}")
-            elif args.format == "json":
-                # Export to JSON
-                stats_retriever.export_to_json(df, args.output)
-                log.info(f"Data exported to JSON: {args.output}")
-            elif args.format == "excel":
-                # Export to Excel
-                stats_retriever.export_to_excel(df, args.output)
-                log.info(f"Data exported to Excel: {args.output}")
+            elif args.format in ["csv", "json", "excel", "yaml", "xml"]:
+                try:
+                    # Export to the specified format using the export module
+                    export.export_data(df, args.output, format=args.format)
+                    log.info(f"Data exported to {args.format.upper()}: {args.output}")
+                except Exception as e:
+                    log.error(f"Error exporting data: {str(e)}")
+                    return 1
             else:
                 log.error(f"Invalid format: {args.format}")
                 return 1
