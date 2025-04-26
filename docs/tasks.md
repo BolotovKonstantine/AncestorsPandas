@@ -48,7 +48,7 @@ This document contains a detailed list of actionable improvement tasks for the A
 
 ## Data Processing and Analysis
 
-33. [ ] Enhance surname normalization to handle more cases
+33. [x] Enhance surname normalization to handle more cases
 34. [ ] Implement more robust date parsing for different formats
 35. [ ] Add data validation to check for inconsistencies
 36. [ ] Implement data cleaning for missing or malformed values

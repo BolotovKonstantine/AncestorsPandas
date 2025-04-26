@@ -60,10 +60,10 @@ class TestNormalizations(unittest.TestCase):
         """Test that parse_dates correctly converts date strings to datetime objects."""
         df = strip_column_names(self.sample_data.copy())
         result = parse_dates(df, 'Birth Date')
-        
+
         # Check that the column has been converted to datetime
         self.assertTrue(pd.api.types.is_datetime64_dtype(result['Birth Date']))
-        
+
         # Check specific date conversions
         expected_dates = [
             datetime(1990, 2, 1),
@@ -74,29 +74,53 @@ class TestNormalizations(unittest.TestCase):
             self.assertEqual(result.loc[i, 'Birth Date'].date(), expected_date.date())
 
     def test_normalize_surname(self):
-        """Test that normalize_surname correctly removes the feminine suffix."""
-        # Test with feminine surname
-        self.assertEqual(normalize_surname('Петрова'), 'Петров')
-        
-        # Test with masculine surname (should remain unchanged)
-        self.assertEqual(normalize_surname('Иванов'), 'Иванов')
-        
+        """Test that normalize_surname correctly handles various surname normalization cases."""
+        # Test with simple feminine suffix
+        self.assertEqual(normalize_surname('Петрова'), 'петров')
+
+        # Test with masculine surname (should be converted to lowercase)
+        self.assertEqual(normalize_surname('Иванов'), 'иванов')
+
+        # Test with complex feminine endings
+        self.assertEqual(normalize_surname('Иванова'), 'иванов')
+        self.assertEqual(normalize_surname('Соколова'), 'соколов')
+        self.assertEqual(normalize_surname('Королева'), 'королев')
+        self.assertEqual(normalize_surname('Пушкина'), 'пушкин')
+        self.assertEqual(normalize_surname('Достоевская'), 'достоевский')
+
+        # Test with special characters and numbers
+        self.assertEqual(normalize_surname('Иванов123'), 'иванов')
+        self.assertEqual(normalize_surname('Петров!@#'), 'петров')
+
+        # Test with prefixes
+        self.assertEqual(normalize_surname('McDonald'), 'mcdonald')
+        self.assertEqual(normalize_surname('MacArthur'), 'macarthur')
+        self.assertEqual(normalize_surname('VanDyke'), 'vandyke')
+
+        # Test with hyphenated surnames
+        self.assertEqual(normalize_surname('Иванова-Петрова'), 'иванов-петров')
+        self.assertEqual(normalize_surname('Смит-Джонсон'), 'смит-джонсон')
+
         # Test with non-string input
         self.assertEqual(normalize_surname(None), None)
         self.assertEqual(normalize_surname(123), 123)
+
+        # Test with empty string
+        self.assertEqual(normalize_surname(''), '')
+        self.assertEqual(normalize_surname('   '), '   ')
 
     def test_apply_surname_normalization(self):
         """Test that apply_surname_normalization correctly adds a normalized surname column."""
         df = self.sample_data.copy()
         result = apply_surname_normalization(df, 'Surname', NORMALIZED_SURNAME_COL)
-        
+
         # Check that the new column exists
         self.assertIn(NORMALIZED_SURNAME_COL, result.columns)
-        
+
         # Check normalization results
-        self.assertEqual(result.loc[0, NORMALIZED_SURNAME_COL], 'Иванов')
-        self.assertEqual(result.loc[1, NORMALIZED_SURNAME_COL], 'Петров')
-        self.assertEqual(result.loc[2, NORMALIZED_SURNAME_COL], 'Сидоров')
+        self.assertEqual(result.loc[0, NORMALIZED_SURNAME_COL], 'иванов')
+        self.assertEqual(result.loc[1, NORMALIZED_SURNAME_COL], 'петров')
+        self.assertEqual(result.loc[2, NORMALIZED_SURNAME_COL], 'сидоров')
 
     def test_load_and_normalize(self):
         """Test that load_and_normalize correctly loads and processes a CSV file."""
@@ -117,24 +141,24 @@ class TestNormalizations(unittest.TestCase):
                 surname_col='Surname',
                 fs_col='FS_ID'
             )
-            
+
             # Check that column names are stripped
             self.assertIn('Name', result.columns)
             self.assertIn('Birth Date', result.columns)
-            
+
             # Check that date parsing worked
             self.assertIn(YEAR_COL, result.columns)
             self.assertEqual(result.loc[0, YEAR_COL], 1990)
-            
+
             # Check that surname normalization worked
             self.assertIn(NORMALIZED_SURNAME_COL, result.columns)
-            self.assertEqual(result.loc[1, NORMALIZED_SURNAME_COL], 'Петров')
-            
+            self.assertEqual(result.loc[1, NORMALIZED_SURNAME_COL], 'петров')
+
             # Check that FS flag was added
             self.assertIn(IN_FS_COL, result.columns)
             self.assertTrue(result.loc[0, IN_FS_COL])
             self.assertFalse(result.loc[1, IN_FS_COL])
-            
+
         finally:
             # Clean up the temporary file
             os.unlink(temp_file_path)

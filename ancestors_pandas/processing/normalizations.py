@@ -5,7 +5,14 @@ This module provides functions for normalizing and cleaning data.
 """
 
 import pandas as pd
+import re
 from typing import Any, Union
+from config import (
+    FEMALE_SURNAME_SUFFIX,
+    FEMALE_SURNAME_ENDINGS,
+    MALE_SURNAME_ENDINGS,
+    SURNAME_PREFIXES
+)
 
 
 def strip_column_names(df: pd.DataFrame) -> pd.DataFrame:
@@ -118,11 +125,15 @@ def parse_dates(df: pd.DataFrame, date_column: str) -> pd.DataFrame:
 
 def normalize_surname(surname: Union[str, Any]) -> Union[str, Any]:
     """
-    Normalizes a given surname by removing a trailing 'а'.
+    Normalizes a given surname by applying several transformations:
+
+    1. Converts text to lowercase
+    2. Removes special characters and numbers
+    3. Standardizes common surname variations (e.g., feminine/masculine forms)
+    4. Handles prefixes like "Mc", "Mac", etc.
 
     This function is designed to handle any input type safely. If the input is not a string,
-    it will be returned unchanged. If the input is a string but doesn't end with 'а',
-    it will also be returned unchanged.
+    it will be returned unchanged.
 
     Parameters:
     -----------
@@ -132,12 +143,95 @@ def normalize_surname(surname: Union[str, Any]) -> Union[str, Any]:
     Returns:
     --------
     str or Any
-        Normalized surname if input is a string ending with 'а',
+        Normalized surname if input is a string,
         otherwise the input value unchanged.
     """
-    # No need for additional validation as the function already handles any input type
-    if isinstance(surname, str) and surname.endswith("а"):
+    # Return non-string values unchanged
+    if not isinstance(surname, str):
+        return surname
+
+    # Skip empty strings
+    if not surname.strip():
+        return surname
+
+    # Convert to lowercase
+    normalized = surname.lower()
+
+    # Remove special characters and numbers
+    normalized = re.sub(r'[^a-zа-яё\s-]', '', normalized)
+
+    # Handle hyphenated surnames by normalizing each part
+    if '-' in normalized:
+        parts = normalized.split('-')
+        normalized_parts = []
+        for part in parts:
+            # Apply normalization to each part
+            normalized_part = part.strip()
+            normalized_part = _normalize_surname_endings(normalized_part)
+            normalized_part = _normalize_surname_prefixes(normalized_part)
+            normalized_parts.append(normalized_part)
+        return '-'.join(normalized_parts)
+
+    # Normalize surname endings (e.g., feminine to masculine forms)
+    normalized = _normalize_surname_endings(normalized)
+
+    # Normalize surname prefixes
+    normalized = _normalize_surname_prefixes(normalized)
+
+    return normalized
+
+
+def _normalize_surname_endings(surname: str) -> str:
+    """
+    Helper function to normalize surname endings, particularly for Russian surnames
+    where feminine forms often end with specific suffixes.
+
+    Parameters:
+    -----------
+    surname : str
+        Input surname string.
+
+    Returns:
+    --------
+    str
+        Surname with normalized endings.
+    """
+    # Handle simple case with just the feminine suffix
+    if surname.endswith(FEMALE_SURNAME_SUFFIX):
         return surname[:-1]
+
+    # Handle more complex feminine endings
+    for i, ending in enumerate(FEMALE_SURNAME_ENDINGS):
+        if surname.endswith(ending):
+            # Replace with corresponding masculine ending
+            return surname[:-len(ending)] + MALE_SURNAME_ENDINGS[i]
+
+    return surname
+
+
+def _normalize_surname_prefixes(surname: str) -> str:
+    """
+    Helper function to normalize surname prefixes like "Mc", "Mac", etc.
+
+    Parameters:
+    -----------
+    surname : str
+        Input surname string.
+
+    Returns:
+    --------
+    str
+        Surname with normalized prefixes.
+    """
+    # Standardize prefixes
+    for prefix in SURNAME_PREFIXES:
+        # Check if surname starts with prefix (case insensitive)
+        prefix_pattern = r'^' + prefix + r'(?=[a-zа-яё])'
+        if re.search(prefix_pattern, surname, re.IGNORECASE):
+            # Standardize the prefix capitalization
+            prefix_length = len(prefix)
+            return prefix + surname[prefix_length:]
+
     return surname
 
 

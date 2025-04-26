@@ -87,7 +87,7 @@ For a more in-depth overview of the project, including a demonstration of the da
 # Data Analysis Results
 - The number of records in the dataset was grouped by year, revealing trends in how many births fall into each year.
 - A subset of the data (specified by a particular field) was isolated and analyzed to determine how many of those records belong to the subset versus the entire dataset.
-- Additionally, surnames were normalized and tallied to observe their frequency distribution across the dataset.
+- Additionally, surnames were normalized and tallied to observe their frequency distribution across the dataset. See the [Surname Normalization Guide](docs/surname_normalization_guide.md) for details on how surname normalization works.
 
 Through these analyses, I was able to:
 1. Identify how many records existed for each year.

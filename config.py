@@ -49,6 +49,9 @@ RECORDS_WITH_CONDITION_FORMAT = "Records with {}"
 
 # Surname normalization
 FEMALE_SURNAME_SUFFIX = "а"
+FEMALE_SURNAME_ENDINGS = ["ова", "ева", "ина", "ская"]
+MALE_SURNAME_ENDINGS = ["ов", "ев", "ин", "ский"]
+SURNAME_PREFIXES = ["mc", "mac", "van", "von", "de", "di", "la", "le"]
 
 # Summary statistics keys
 STAT_TOTAL_RECORDS = "total_records"

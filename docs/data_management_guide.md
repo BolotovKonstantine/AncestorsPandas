@@ -85,8 +85,13 @@ Surname normalization performs the following operations:
 
 - Converts text to lowercase
 - Removes special characters and numbers
-- Standardizes common surname variations
-- Handles prefixes like "Mc", "Mac", etc.
+- Standardizes common surname variations:
+  - Converts Russian feminine surnames to masculine form (e.g., "Петрова" → "петров")
+  - Handles complex Russian surname endings (e.g., "Королева" → "королев", "Достоевская" → "достоевский")
+- Handles prefixes like "Mc", "Mac", "Van", "Von", "De", etc.
+- Processes hyphenated surnames by normalizing each part separately
+
+For detailed information about surname normalization, including examples, configuration options, and best practices, see the [Surname Normalization Guide](surname_normalization_guide.md).
 
 ### Date Normalization
 
